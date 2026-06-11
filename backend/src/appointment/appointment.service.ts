@@ -5,6 +5,15 @@ import { PrismaService } from '../prisma/prisma.service';
 export class AppointmentsService {
   constructor(private prisma: PrismaService) {}
 
+  async getDashboardStats() {
+    // Ví dụ: đếm số lượng lịch hẹn trong hệ thống
+    const totalAppointments = await this.prisma.appointment.count();
+    return {
+      total: totalAppointments,
+      // Thêm các thông số khác nếu cần
+    };
+  }
+
   async create(dto: any) {
     return this.prisma.appointment.create({
       data: {

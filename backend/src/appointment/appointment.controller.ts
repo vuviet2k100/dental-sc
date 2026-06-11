@@ -5,12 +5,18 @@ import { Roles } from '../auth/decorators/role.decorator';
 import { Role } from '@prisma/client';
 import { AppointmentsService } from './appointment.service';
 import { Req } from '@nestjs/common';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('appointments')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AppointmentsController {
   constructor(private readonly appointmentService: AppointmentsService) {}
 
+@Public() // <--- Thêm dòng này ở đây
+@Get('stats') 
+async getStats() {
+  return this.appointmentService.getDashboardStats();
+}
   @Post()
   @Roles(Role.ADMIN, Role.STAFF) 
   create(@Body() data: any, @Req() req: any) {
