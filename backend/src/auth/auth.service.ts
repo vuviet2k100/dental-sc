@@ -13,28 +13,26 @@ export class AuthService {
     private jwtService: JwtService,
   ){}
 
-  async login(loginDto: any) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: loginDto.email },
-    });
+  async login(loginDto: LoginDto) {
+  const user = await this.prisma.user.findUnique({
+    where: { email: loginDto.email },
+  });
 
-    if (!user) {
-      throw new UnauthorizedException('Email hoặc mật khẩu không chính xác!');
-    }
+  if (!user) throw new UnauthorizedException('Email hoặc mật khẩu không chính xác!');
 
-    // So sánh mật khẩu đã hash với mật khẩu nhập vào
-    const isMatch = await bcrypt.compare(loginDto.password, user.password);
-    
-    if (!isMatch) {
-      throw new UnauthorizedException('Email hoặc mật khẩu không chính xác!');
-    }
-
-    // Tạo JWT token thật
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
+  // Dòng này là chìa khóa: Phải dùng bcrypt.compare
+  const isMatch = await bcrypt.compare(loginDto.password, user.password);
+  
+  if (!isMatch) {
+    throw new UnauthorizedException('Email hoặc mật khẩu không chính xác!');
   }
+
+  // Nếu tới đây nghĩa là mật khẩu ĐÚNG
+  const payload = { sub: user.id, email: user.email, role: user.role };
+  return {
+    access_token: this.jwtService.sign(payload),
+  };
+}
 
   async getProfile(userId: number) {
     return this.prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, role: true } });
