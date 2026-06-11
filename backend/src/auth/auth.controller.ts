@@ -15,26 +15,7 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
-    console.log("Dữ liệu Body nhận được:", JSON.stringify(loginDto));
-
-  if (!loginDto || !loginDto.email) {
-    throw new BadRequestException('Request Body không hợp lệ hoặc thiếu dữ liệu!');
-  }
-  
-    const user = await this.prisma.user.findUnique({
-    where: { email: loginDto.email },
-  });
-
-  if (!user) throw new UnauthorizedException('User không tồn tại!');
-
-  // TẠM THỜI: Kiểm tra password thô
-  const isMatch = loginDto.password === user.password; 
-  
-  if (!isMatch) {
-    throw new UnauthorizedException('Mật khẩu sai!');
-  }
-
-  return { access_token: "test-token" };
+    return this.authService.login(loginDto);
 }
 
   @Get('profile')
