@@ -64,6 +64,8 @@ model Appointment {
   patient Patient @relation(fields: [patientId], references: [id])
   doctor  User    @relation(fields: [doctorId], references: [id])
   staff   User?    @relation("StaffAppointments", fields: [staffId], references: [id])
+  
+  @@map("Appointments")
 }
 
 model MedicalRecord {
