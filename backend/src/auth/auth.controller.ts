@@ -13,6 +13,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class AuthController {
   constructor(private authService: AuthService, private prisma: PrismaService) {}
 
+  @Post('login')
   async login(loginDto: LoginDto) {
   const user = await this.prisma.user.findUnique({
     where: { email: loginDto.email },
