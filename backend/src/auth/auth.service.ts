@@ -13,14 +13,27 @@ export class AuthService {
     private jwtService: JwtService,
   ){}
 
-  async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({ 
-      where: { email: dto.email } });
-    if (!user || !(await bcrypt.compare(dto.password, user.password))) {
+  async login(loginDto: any) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: loginDto.email },
+    });
+
+    if (!user) {
       throw new UnauthorizedException('Email hoặc mật khẩu không chính xác!');
     }
+
+    // So sánh mật khẩu đã hash với mật khẩu nhập vào
+    const isMatch = await bcrypt.compare(loginDto.password, user.password);
+    
+    if (!isMatch) {
+      throw new UnauthorizedException('Email hoặc mật khẩu không chính xác!');
+    }
+
+    // Tạo JWT token thật
     const payload = { sub: user.id, email: user.email, role: user.role };
-    return { access_token: this.jwtService.sign(payload), user: { id: user.id, email: user.email, role: user.role } };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 
   async getProfile(userId: number) {
