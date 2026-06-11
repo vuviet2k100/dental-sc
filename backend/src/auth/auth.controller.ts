@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Req, Patch, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Req, Patch, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDoctorDto, RegisterStaffDto } from './dtos/register.dto';
 import { LoginDto } from './dtos/login.dto';
@@ -14,8 +14,14 @@ export class AuthController {
   constructor(private authService: AuthService, private prisma: PrismaService) {}
 
   @Post('login')
-  async login(loginDto: LoginDto) {
-  const user = await this.prisma.user.findUnique({
+  async login(@Body() loginDto: LoginDto) {
+    console.log("Dữ liệu Body nhận được:", JSON.stringify(loginDto));
+
+  if (!loginDto || !loginDto.email) {
+    throw new BadRequestException('Request Body không hợp lệ hoặc thiếu dữ liệu!');
+  }
+  
+    const user = await this.prisma.user.findUnique({
     where: { email: loginDto.email },
   });
 
