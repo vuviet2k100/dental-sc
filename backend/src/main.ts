@@ -28,11 +28,12 @@ async function bootstrap() {
   // 3. CORS
   app.enableCors({
     origin: [
-    'http://localhost:3000', 
-    'http://localhost:3001', 
-    'https://dental-sc.onrender.com'
+      'http://localhost:3000', 
+      'http://localhost:3001', 
+      'https://dental-sc.onrender.com',
+      'https://dental-3rod6kfyf-vuviet2k100-2082s-projects.vercel.app' // THÊM DÒNG NÀY VÀO
+      
     ],
-
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Authorization',
     credentials: true,
