@@ -1,7 +1,7 @@
 import { 
   Controller, Get, Post, Body, Patch, Param, Delete, 
   UseGuards, ParseIntPipe, UseInterceptors, UploadedFile, 
-  Req, BadRequestException, Query // Đã sửa: bỏ '...'
+  Req, BadRequestException, Query 
 } from '@nestjs/common';
 import { MedicalRecordService } from './medical-record.service';
 import { CreateMedicalRecordDto } from './dto/create-medical-record.dto';
@@ -20,11 +20,10 @@ export class MedicalRecordController {
   @Post()
   @Roles(Role.ADMIN, Role.DOCTOR)
   create(@Body() dto: CreateMedicalRecordDto, @Req() req: any) {
-    const doctorId = req.user.id; // Lấy doctorId từ token đã giải mã
+    const doctorId = req.user.id;
     return this.medicalRecordService.create({ ...dto, doctorId });
   }
 
-  // ĐÃ GỘP: Chỉ để lại 1 hàm @Get() duy nhất
   @Get()
   @Roles(Role.ADMIN, Role.DOCTOR, Role.STAFF)
   findAll(@Query('doctorId') doctorId?: string) {
@@ -53,6 +52,7 @@ export class MedicalRecordController {
     return this.medicalRecordService.remove(id);
   }
 
+  // SỬA ĐỔI PHẦN UPLOAD: Dùng Service để xử lý stream lên Cloudinary
   @Post('upload/:id')
   @Roles(Role.ADMIN, Role.DOCTOR)
   @UseInterceptors(FileInterceptor('file')) 
@@ -61,12 +61,15 @@ export class MedicalRecordController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) throw new BadRequestException('Vui lòng chọn tệp tin!');
-    return this.medicalRecordService.updateImage(id, file.filename);
+    
+    // Gọi thẳng Service đã tích hợp Cloudinary
+    // Truyền cả file (buffer) và id của hồ sơ bệnh án
+    return await this.medicalRecordService.uploadImage(file, id);
   }
 
-  @Delete('image/:id')
+  @Delete('image/:imageId')
   @Roles(Role.ADMIN, Role.DOCTOR)
-  removeImage(@Param('id', ParseIntPipe) id: number) {
-    return this.medicalRecordService.removeImage(id);
+  removeImage(@Param('imageId', ParseIntPipe) imageId: number) {
+    return this.medicalRecordService.removeImage(imageId);
   }
 }

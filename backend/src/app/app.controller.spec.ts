@@ -7,6 +7,10 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 
 @Controller()
 export class AppController {
+  @Get()
+  getHello(): string {
+    return 'Dental System API is Running! (v1.0.0)';
+  }
   constructor(private readonly appService: AppService) {}
 
   @Get('dashboard')

@@ -18,17 +18,17 @@ export class AuthController {
     return this.authService.login(loginDto);
 }
 
-  @Get('profile')
   @UseGuards(JwtAuthGuard)
+  @Get('profile')
   getProfile(@Req() req: any) {
-    return this.authService.getProfile(req.user.userId);
+    return this.authService.getProfile(req.user.id);
   }
 
   // THÊM ĐOẠN NÀY ĐỂ FIX LỖI 404
   @Patch('change-password')
   @UseGuards(JwtAuthGuard)
   changePassword(@Req() req: any, @Body() body: any) {
-    return this.authService.changePassword(req.user.userId, body);
+    return this.authService.changePassword(req.user.id, body);
   }
 
   @Post('register/doctor')

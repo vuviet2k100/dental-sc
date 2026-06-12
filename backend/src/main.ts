@@ -1,30 +1,35 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
-import 'dotenv/config'; 
-import { ValidationPipe, Logger } from '@nestjs/common'; // Thêm Logger
-import { NestExpressApplication } from '@nestjs/platform-express'; // Import cái này
+import { ValidationPipe, Logger } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import * as dotenv from 'dotenv';
 
+dotenv.config();
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  const logger = new Logger('Bootstrap'); // Khởi tạo Logger
+  const logger = new Logger('Bootstrap');
 
-  app.useStaticAssets(join(process.cwd(), 'uploads'), {
-    prefix: '/uploads', // URL sẽ là http://localhost:3000/uploads/filename.jpg
-  });
+  // Validate toàn bộ dữ liệu đầu vào theo DTO
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true, // Tự động loại bỏ các field không có trong DTO
-    forbidNonWhitelisted: true, // Báo lỗi nếu client gửi thừa field
-    transform: true, // Tự động chuyển đổi kiểu dữ liệu (vd: string "1" thành number 1)
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
   }));
 
+  // CORS chuẩn cho Cloud
   app.enableCors({
-    origin: '*',
+    origin: '*', // Sau khi test xong nhớ đổi thành domain frontend của bạn
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
 
-  await app.listen(3000);
-  logger.log(`Application is running on: ${await app.getUrl()}`); // Log ra console cổng server
+  // Serve static files nếu cần (nhưng nhớ Render không lưu file lâu dài)
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
+
+  // PORT quan trọng cho Render
+  const port = process.env.PORT || 3000;
+  await app.listen(port, '0.0.0.0');
+  logger.log(`Application is running on port: ${port}`);
 }
 bootstrap();

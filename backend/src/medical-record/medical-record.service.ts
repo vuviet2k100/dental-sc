@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMedicalRecordDto } from './dto/create-medical-record.dto';
 import { UpdateMedicalRecordDto } from './dto/update-medical-record.dto';
+import { v2 as cloudinary } from 'cloudinary';
+import * as streamifier from 'streamifier';  
 
 @Injectable()
 export class MedicalRecordService {
@@ -77,15 +79,33 @@ export class MedicalRecordService {
     return this.prisma.medicalRecord.delete({ where: { id } });
   }
 
-  async updateImage(recordId: number, filename: string) {
-    const record = await this.prisma.medicalRecord.findUnique({ where: { id: recordId } });
-    if (!record) throw new NotFoundException('Không tìm thấy bệnh án');
+  async uploadImage(file: Express.Multer.File, recordId: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const upload = cloudinary.uploader.upload_stream(
+        { 
+          folder: 'medical_records',
+          // Dùng timestamp để tránh trùng lặp nếu upload nhiều ảnh cho 1 record
+          public_id: `record_${recordId}_${Date.now()}` 
+        },
+        async (error, result) => {
+          if (error) return reject(error);
+          if (!result) return reject(new Error('Upload thất bại'));
 
-    return this.prisma.treatmentImage.create({
-      data: { 
-        imageUrl: `/uploads/${filename}`,
-        medicalRecordId: recordId 
-      }
+          try {
+            // Sửa cú pháp: .create({ data: { ... } })
+            const newImage = await this.prisma.treatmentImage.create({
+              data: {
+                url: result.secure_url,
+                medicalRecordId: recordId, // recordId đang là number, khớp với schema
+              },
+            });
+            resolve(newImage.url);
+          } catch (dbError) {
+            reject(dbError);
+          }
+        }
+      );
+      streamifier.createReadStream(file.buffer).pipe(upload);
     });
   }
 

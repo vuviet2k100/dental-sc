@@ -4,7 +4,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  }
+  //url      = env("DATABASE_URL") // Bắt buộc phải có env để deploy lên Render
+}
 
 enum Role {
   ADMIN
@@ -23,20 +24,20 @@ enum AppointmentStatus {
 model User {
   id        Int      @id @default(autoincrement())
   name      String
-  email     String?   @unique
+  email     String?  @unique
   password  String
   role      Role     @default(PATIENT) 
   createdAt DateTime @default(now())
 
-  appointments   Appointment[]
-  medicalRecords MedicalRecord[]
+  appointments      Appointment[]
+  medicalRecords    MedicalRecord[]
   staffAppointments Appointment[] @relation("StaffAppointments")
 
   @@map("Users")
 }
 
 model Patient {
-  id        Int       @id @default(autoincrement()) // Đổi về Int tự động tăng cho đồng bộ hệ thống
+  id        Int       @id @default(autoincrement())
   name      String
   phone     String    @unique
   gender    String?
@@ -45,7 +46,6 @@ model Patient {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  // Đã thêm quan hệ hai chiều vào đây:
   appointments   Appointment[]
   medicalRecords MedicalRecord[]
 }
@@ -54,16 +54,16 @@ model Appointment {
   id              Int               @id @default(autoincrement())
   appointmentTime DateTime
   note            String?
-  status          AppointmentStatus
+  status          AppointmentStatus @default(WAITING) // Thêm giá trị mặc định
   createdAt       DateTime          @default(now())
 
   patientId Int
   doctorId  Int
-  staffId   Int? // Thêm trường staffId để liên kết với nhân viên nếu cần
+  staffId   Int? 
   
   patient Patient @relation(fields: [patientId], references: [id])
   doctor  User    @relation(fields: [doctorId], references: [id])
-  staff   User?    @relation("StaffAppointments", fields: [staffId], references: [id])
+  staff   User?   @relation("StaffAppointments", fields: [staffId], references: [id])
   
   @@map("Appointments")
 }
@@ -74,6 +74,7 @@ model MedicalRecord {
   treatment String
   note      String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // Bổ sung để theo dõi lịch sử chỉnh sửa
 
   patientId Int
   doctorId  Int
@@ -81,15 +82,14 @@ model MedicalRecord {
   patient Patient @relation(fields: [patientId], references: [id])
   doctor  User    @relation(fields: [doctorId], references: [id])
 
-  images TreatmentImage[]
+  images    TreatmentImage[]
 }
 
 model TreatmentImage {
-  id        Int      @id @default(autoincrement())
-  imageUrl  String
-  createdAt DateTime @default(now())
-
+  id              Int           @id @default(autoincrement())
+  url             String        // Đây là link từ Cloudinary
+  createdAt       DateTime      @default(now())
   medicalRecordId Int
-
-  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id])
+  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade) 
+  // Thêm onDelete: Cascade để khi xóa hồ sơ bệnh án, ảnh tự xóa theo, tránh rác DB
 }

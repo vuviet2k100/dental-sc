@@ -1,0 +1,2 @@
+# Đảm bảo file .prisma luôn giữ định dạng LF
+*.prisma text eol=lf
