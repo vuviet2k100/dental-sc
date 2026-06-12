@@ -20,17 +20,21 @@ export class AuthService {
 
   if (!user) throw new UnauthorizedException('Email hoặc mật khẩu không chính xác!');
 
-  // Dòng này là chìa khóa: Phải dùng bcrypt.compare
   const isMatch = await bcrypt.compare(loginDto.password, user.password);
-  
   if (!isMatch) {
     throw new UnauthorizedException('Email hoặc mật khẩu không chính xác!');
   }
 
-  // Nếu tới đây nghĩa là mật khẩu ĐÚNG
   const payload = { sub: user.id, email: user.email, role: user.role };
+  
   return {
     access_token: this.jwtService.sign(payload),
+    user: { // THÊM CỤC NÀY VÀO
+      id: user.id,
+      role: user.role,
+      name: user.name,
+      email: user.email
+    }
   };
 }
 
