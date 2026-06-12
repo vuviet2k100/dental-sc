@@ -27,8 +27,14 @@ async function bootstrap() {
 
   // 3. CORS
   app.enableCors({
-    origin: '*',
+    origin: [
+    'http://localhost:3000', 
+    'http://localhost:3001', 
+    'https://dental-sc.onrender.com'
+    ],
+
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Authorization',
     credentials: true,
   });
 
