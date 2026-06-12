@@ -8,15 +8,15 @@ import { v2 as cloudinary } from 'cloudinary';
 dotenv.config();
 
 async function bootstrap() {
-  // 1. Cấu hình Cloudinary ngay khi khởi động
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const logger = new Logger('Bootstrap');
+
+  // 1. Cấu hình Cloudinary
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
-
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  const logger = new Logger('Bootstrap');
 
   // 2. Validate dữ liệu
   app.useGlobalPipes(new ValidationPipe({
@@ -25,26 +25,23 @@ async function bootstrap() {
     transform: true,
   }));
 
-  // 3. CORS
+  // 3. CORS động: Lấy danh sách từ biến môi trường
+  // Trong .env, bạn để: ALLOWED_ORIGINS=http://localhost:3000,https://abc.vercel.app
+  const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',') 
+    : ['http://localhost:3000'];
+
   app.enableCors({
-    origin: [
-      'http://localhost:3000', 
-      'http://localhost:3001', 
-      'https://dental-sc.onrender.com',
-      'https://dental-3rod6kfyf-vuviet2k100-2082s-projects.vercel.app' // THÊM DÒNG NÀY VÀO
-      
-    ],
+    origin: allowedOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Authorization',
     credentials: true,
   });
 
-  // 4. Đã bỏ dòng useStaticAssets vì dùng Cloudinary là chuẩn rồi!
-
-  // 5. Khởi chạy server
+  // 4. Khởi chạy server
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
-  logger.log(`Application is running on port: ${port}`);
+  logger.log(`Application is running on port: ${port} with allowed origins: ${allowedOrigins.join(', ')}`);
 }
 
 bootstrap();
