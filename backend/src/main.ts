@@ -32,11 +32,21 @@ async function bootstrap() {
     : ['http://localhost:3000'];
 
   app.enableCors({
-    origin: allowedOrigins,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type, Authorization',
-    credentials: true,
-  });
+    origin: (origin, callback) => {
+    // 1. Cho phép truy cập từ localhost (để dev)
+    // 2. Cho phép truy cập từ bất kỳ domain nào kết thúc bằng .vercel.app
+    if (!origin || 
+        origin.includes('localhost') || 
+        origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  allowedHeaders: 'Content-Type, Authorization',
+  credentials: true,
+});
 
   // 4. Khởi chạy server
   const port = process.env.PORT || 3000;
