@@ -22,7 +22,7 @@ export default function PatientsPage() {
 
   const fetchData = async () => {
     try {
-      const res = await axios.get('process.env.NEXT_PUBLIC_API_URL/patients', getAuthConfig());
+      const res = await axios.get('${process.env.NEXT_PUBLIC_API_URL}/patients', getAuthConfig());
       setList(res.data || []);
     } catch (err: any) {
       if (err.response?.status === 401) router.push('/login');
