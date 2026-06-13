@@ -35,6 +35,8 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type,Authorization',
     credentials: true,
+    preflightContinue: false, // Rất quan trọng: cho phép NestJS tự xử lý OPTIONS
+    optionsSuccessStatus: 204, // Trình duyệt thích 204 cho preflight
   });
 
   const port = process.env.PORT || 10000;
