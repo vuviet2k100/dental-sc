@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import axios from 'axios';
+import { api } from '@/app/lib/axios'; // Import instance api đã cấu hình
 import { useRouter } from 'next/navigation';
 
 export default function Register() {
@@ -9,37 +9,30 @@ export default function Register() {
     name: '',
     email: '',
     password: '',
-    role: 'DOCTOR' // Mặc định chọn DOCTOR
+    role: 'DOCTOR' 
   });
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    // 1. Kiểm tra Token của Admin
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      alert('Bạn chưa đăng nhập hoặc không có quyền Admin!');
-      router.push('/login');
-      return;
-    }
-
-    // 2. Chọn route dựa trên role đã chọn
+    // 1. Endpoint sẽ được ghép với baseURL trong api instance
     const endpoint = formData.role === 'DOCTOR' ? '/auth/register/doctor' : '/auth/register/staff';
-    const url = `process.env.NEXT_PUBLIC_API_URL${endpoint}`;
 
     setLoading(true);
     try {
-      // 3. Gửi kèm Token để xác thực quyền Admin
-      await axios.post(url, formData, {
-        headers: { 
-          Authorization: `Bearer ${token}` 
-        }
-      });
+      // 2. Không cần headers thủ công, 'api' đã tự xử lý Authorization header
+      await api.post(endpoint, formData);
       
       alert('Đăng ký tài khoản thành công!');
       router.push('/dashboard');
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra, hãy kiểm tra lại thông tin.';
-      alert('Đăng ký thất bại: ' + errorMessage);
+      // 3. Xử lý lỗi (ví dụ: 401 khi hết hạn token Admin)
+      if (error.response?.status === 401) {
+        alert('Phiên làm việc hết hạn, vui lòng đăng nhập lại.');
+        router.push('/login');
+      } else {
+        const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra, hãy kiểm tra lại thông tin.';
+        alert('Đăng ký thất bại: ' + errorMessage);
+      }
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,7 @@
 'use client';
 import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import axios from 'axios';
+import { api } from '@/app/lib/axios'; // IMPORT INSTANCE API ĐÃ CẤU HÌNH
 import { ArrowLeft, Save, FilePlus, Loader2 } from 'lucide-react';
 
 function CreateFormContent() {
@@ -13,7 +13,6 @@ function CreateFormContent() {
   const [loading, setLoading] = useState(false);
 
   const handleBack = () => {
-    // Xác nhận nếu người dùng đã nhập liệu
     if (formData.diagnosis || formData.treatment || formData.note) {
       if (!confirm('Bạn có thay đổi chưa lưu, vẫn muốn thoát?')) return;
     }
@@ -28,13 +27,11 @@ function CreateFormContent() {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await axios.post(`process.env.NEXT_PUBLIC_API_URL/medical-record`, {
+      // Dùng api.post (đã tự động đính kèm token qua interceptor)
+      const response = await api.post(`/medical-record`, {
         ...formData,
         patientId: Number(patientId),
-        doctorId: 1, // Lưu ý: Trong thực tế nên lấy từ token hoặc AuthContext
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
+        doctorId: 1, // Nên lấy từ JWT payload thay vì cứng 1
       });
 
       alert('Tạo bệnh án thành công!');

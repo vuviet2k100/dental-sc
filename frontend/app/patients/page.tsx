@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '@/app/lib/axios'; // Import instance api đã cấu hình
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -16,17 +16,20 @@ export default function PatientsPage() {
   });
   const [isEditing, setIsEditing] = useState(false);
 
-  useEffect(() => { setUserRole(localStorage.getItem('user_role')); }, []);
-
-  const getAuthConfig = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` } });
+  useEffect(() => { 
+    setUserRole(localStorage.getItem('user_role')); 
+  }, []);
 
   const fetchData = async () => {
     try {
-      const res = await axios.get('${process.env.NEXT_PUBLIC_API_URL}/patients', getAuthConfig());
+      // Dùng instance api thay vì axios
+      const res = await api.get('/patients');
       setList(res.data || []);
     } catch (err: any) {
       if (err.response?.status === 401) router.push('/login');
-    } finally { setLoading(false); }
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -37,13 +40,19 @@ export default function PatientsPage() {
 
     try {
       const payload = { name: form.name, phone: form.phone, birthDate: form.birthDate, gender: form.gender, address: form.address };
-      if (isEditing && form.id) await axios.patch(`process.env.NEXT_PUBLIC_API_URL/patients/${form.id}`, payload, getAuthConfig());
-      else await axios.post('process.env.NEXT_PUBLIC_API_URL/patients', payload, getAuthConfig());
+      
+      if (isEditing && form.id) {
+        await api.patch(`/patients/${form.id}`, payload);
+      } else {
+        await api.post('/patients', payload);
+      }
       
       setForm({ id: null, name: '', phone: '', birthDate: '', gender: 'Nam', address: '' });
       setIsEditing(false);
       fetchData();
-    } catch (err: any) { alert("Lỗi lưu dữ liệu!"); }
+    } catch (err: any) { 
+      alert("Lỗi lưu dữ liệu!"); 
+    }
   };
 
   const startEdit = (p: any) => {
@@ -53,8 +62,12 @@ export default function PatientsPage() {
 
   const deletePatient = async (id: number) => {
     if (!window.confirm("Xác nhận xóa bệnh nhân?")) return;
-    try { await axios.delete(`process.env.NEXT_PUBLIC_API_URL/patients/${id}`, getAuthConfig()); fetchData(); } 
-    catch (err: any) { alert("Chỉ Admin mới có quyền xóa!"); }
+    try { 
+      await api.delete(`/patients/${id}`); 
+      fetchData(); 
+    } catch (err: any) { 
+      alert("Chỉ Admin mới có quyền xóa!"); 
+    }
   };
 
   if (loading) return <div className="p-10 text-center text-slate-500">Đang tải hồ sơ...</div>;
@@ -62,7 +75,6 @@ export default function PatientsPage() {
   return (
     <div className="p-8 bg-slate-50 min-h-screen">
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header Section */}
         <div className="flex justify-between items-end">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Hồ sơ bệnh nhân</h1>
@@ -72,7 +84,6 @@ export default function PatientsPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Form Card */}
           <div className="bg-white p-7 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 h-fit">
             <h2 className="text-lg font-bold mb-6 text-slate-800">{isEditing ? "📝 Chỉnh sửa hồ sơ" : "👤 Thêm bệnh nhân mới"}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -89,7 +100,6 @@ export default function PatientsPage() {
             </form>
           </div>
 
-          {/* Table Card */}
           <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
             <input className="w-full p-5 border-b border-slate-100 outline-none text-sm" placeholder="🔍 Tìm kiếm bệnh nhân theo tên..." onChange={e => setSearchQuery(e.target.value)} />
             <table className="w-full text-left">

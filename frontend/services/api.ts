@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Gán cứng URL Backend để tránh lỗi process.env trên Vercel
+// Gán cứng 100% - Không dùng process.env
 const API_URL = 'https://dental-sc.onrender.com/api'; 
 
 export const api = axios.create({ 

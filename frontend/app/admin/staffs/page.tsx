@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { UserCog, RefreshCw, Eye, Users } from 'lucide-react';
+import { api } from '@/app/lib/axios'; // Import instance api đã cấu hình
 import DetailedView from '@/components/DetailedView';
 
 export default function AdminStaffsPage() {
@@ -12,32 +12,31 @@ export default function AdminStaffsPage() {
   const router = useRouter();
 
   const fetchStaffs = async () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) { router.push('/login'); return; }
-
     try {
-      const res = await axios.get('process.env.NEXT_PUBLIC_API_URL/users?role=STAFF', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Instance 'api' đã tự động đính kèm token qua interceptor
+      const res = await api.get('/users?role=STAFF');
       setStaffs(res.data);
     } catch (err: any) {
       if (err.response?.status === 401) router.push('/login');
+      console.error("Lỗi khi tải danh sách nhân viên:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchStaffs(); }, []);
+  useEffect(() => { 
+    fetchStaffs(); 
+  }, []);
 
   const handleResetPassword = async (id: number) => {
     if (!confirm("Bạn có chắc muốn đặt lại mật khẩu nhân viên này về 123456?")) return;
     try {
-      const token = localStorage.getItem('access_token');
-      await axios.patch(`process.env.NEXT_PUBLIC_API_URL/users/${id}/reset-password`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.patch(`/users/${id}/reset-password`);
       alert("Reset mật khẩu thành công!");
-    } catch { alert("Lỗi khi reset mật khẩu."); }
+    } catch (err) {
+      console.error("Lỗi reset mật khẩu:", err);
+      alert("Lỗi khi reset mật khẩu.");
+    }
   };
 
   if (loading) return <SkeletonLoader />;
@@ -66,7 +65,10 @@ export default function AdminStaffsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => handleResetPassword(staff.id)} className="text-xs flex items-center gap-1 text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+                  <button 
+                    onClick={() => handleResetPassword(staff.id)} 
+                    className="text-xs flex items-center gap-1 text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors"
+                  >
                     <RefreshCw size={12}/> Reset PW
                   </button>
                   <button 
@@ -88,7 +90,6 @@ export default function AdminStaffsPage() {
             <Users size={20} />
             <h2 className="text-lg font-bold">Lịch hẹn do {selectedStaff.name} tạo</h2>
           </div>
-          {/* Truyền cả object selectedStaff để DetailedView lấy tên hiển thị */}
           <DetailedView type="STAFF" user={selectedStaff} />
         </div>
       )}

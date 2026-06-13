@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
-import axios from 'axios';
-import { Upload, X } from 'lucide-react';
+import { api } from '@/app/lib/axios'; // Import instance api đã cấu hình
+import { Upload } from 'lucide-react';
 
 interface Props {
   recordId: number;
@@ -10,38 +10,47 @@ interface Props {
 
 export default function FileUploader({ recordId, onUploadSuccess }: Props) {
   const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleUpload = async () => {
     if (!file) return;
 
     const formData = new FormData();
-    formData.append('file', file); // Phải khớp với 'file' trong @UseInterceptors(FileInterceptor('file'))
+    formData.append('file', file);
 
+    setLoading(true);
     try {
-      await axios.post(`process.env.NEXT_PUBLIC_API_URL/medical-record/upload/${recordId}`, formData, {
-        headers: { 
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'multipart/form-data' 
-        }
+      // Instance 'api' đã đính kèm token trong interceptor
+      await api.post(`/medical-record/upload/${recordId}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
+      
       setFile(null);
       onUploadSuccess();
       alert('Upload thành công!');
     } catch (err) {
-      console.error(err);
+      console.error("Lỗi upload:", err);
       alert('Upload thất bại');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex items-center gap-2 p-4 border-2 border-dashed rounded-xl border-slate-300">
-      <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+      <input 
+        type="file" 
+        onChange={(e) => setFile(e.target.files?.[0] || null)} 
+        className="text-sm"
+      />
       <button 
         onClick={handleUpload}
-        disabled={!file}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 flex items-center gap-2"
+        disabled={!file || loading}
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 flex items-center gap-2 hover:bg-blue-700 transition"
       >
-        <Upload size={16} /> Tải lên
+        <Upload size={16} /> {loading ? 'Đang tải...' : 'Tải lên'}
       </button>
     </div>
   );

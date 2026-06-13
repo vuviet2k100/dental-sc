@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { api } from '@/app/lib/axios'; // Nhập instance api đã cấu hình sẵn
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
@@ -9,12 +9,10 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const token = localStorage.getItem('access_token');
-        const res = await axios.get('process.env.NEXT_PUBLIC_API_URL/dashboard', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
+        // Chỉ cần gọi endpoint, baseURL và Token đã được api instance xử lý tự động
+        const res = await api.get('/dashboard'); 
         
-        console.log("Data từ backend:", res.data); // Xem kỹ các key trả về ở đây xem có đúng là patients, appointments, doctors, staff không
+        console.log("Data từ backend:", res.data);
         setStats(res.data);
       } catch (err) {
         console.error("Lỗi khi tải dữ liệu dashboard:", err);
@@ -25,7 +23,6 @@ export default function DashboardPage() {
     fetchDashboard();
   }, []);
 
-  // HIỆU ỨNG LOADING SKELETON (Nhìn chuyên nghiệp hơn chữ "Đang tải...")
   if (loading) {
     return (
       <div className="p-10 animate-pulse">

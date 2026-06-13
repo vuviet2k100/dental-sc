@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Stethoscope, RefreshCw, Eye, UserCheck } from 'lucide-react';
+import { api } from '@/app/lib/axios'; // Import instance api đã cấu hình
 import DetailedView from '@/components/DetailedView';
 
 export default function AdminDoctorsPage() {
@@ -9,18 +8,27 @@ export default function AdminDoctorsPage() {
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
 
   useEffect(() => {
-    // Gọi API lấy danh sách bác sĩ
+    // Gọi API lấy danh sách bác sĩ thông qua instance api
     const fetchDoctors = async () => {
-      const res = await axios.get('process.env.NEXT_PUBLIC_API_URL/users?role=DOCTOR');
-      setDoctors(res.data);
+      try {
+        const res = await api.get('/users?role=DOCTOR');
+        setDoctors(res.data);
+      } catch (err) {
+        console.error("Lỗi khi tải danh sách bác sĩ:", err);
+      }
     };
     fetchDoctors();
   }, []);
 
   const handleResetPassword = async (id: number) => {
     if (confirm("Reset mật khẩu về 123456?")) {
-      await axios.patch(`process.env.NEXT_PUBLIC_API_URL/users/${id}/reset-password`);
-      alert("Đã reset!");
+      try {
+        await api.patch(`/users/${id}/reset-password`);
+        alert("Đã reset mật khẩu thành công!");
+      } catch (err) {
+        console.error("Lỗi khi reset mật khẩu:", err);
+        alert("Có lỗi xảy ra khi reset.");
+      }
     }
   };
 
@@ -37,8 +45,18 @@ export default function AdminDoctorsPage() {
               <p className="text-sm text-gray-500">{doc.email}</p>
             </div>
             <div className="space-x-4">
-              <button onClick={() => handleResetPassword(doc.id)} className="text-red-500 text-sm">Reset PW</button>
-              <button onClick={() => setSelectedDoctor(doc)} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">Xem chi tiết</button>
+              <button 
+                onClick={() => handleResetPassword(doc.id)} 
+                className="text-red-500 text-sm hover:underline"
+              >
+                Reset PW
+              </button>
+              <button 
+                onClick={() => setSelectedDoctor(doc)} 
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
+              >
+                Xem chi tiết
+              </button>
             </div>
           </div>
         ))}

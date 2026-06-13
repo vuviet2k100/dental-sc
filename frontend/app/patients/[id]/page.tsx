@@ -1,9 +1,9 @@
 'use client';
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '@/app/lib/axios'; // Import instance api đã cấu hình
 import Link from 'next/link';
-import { MapPin, Phone, ArrowLeft, Calendar, User, Clock } from 'lucide-react';
+import { MapPin, Phone, ArrowLeft, Calendar, User } from 'lucide-react';
 import MedicalRecordsList from '@/components/MedicalRecordsList';
 
 export default function PatientDetailPage() {
@@ -20,11 +20,12 @@ export default function PatientDetailPage() {
 
   const fetchData = async () => {
     try {
-      const res = await axios.get(`process.env.NEXT_PUBLIC_API_URL/patients/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
-      });
+      // Instance api đã tự động đính kèm Token, không cần truyền headers
+      const res = await api.get(`/patients/${id}`);
       setPatient(res.data);
-    } catch (err) { console.error("Lỗi tải thông tin bệnh nhân:", err); }
+    } catch (err) { 
+      console.error("Lỗi tải thông tin bệnh nhân:", err); 
+    }
   };
 
   useEffect(() => { 

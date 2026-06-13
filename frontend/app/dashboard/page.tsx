@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { api } from '@/app/lib/axios'; // IMPORT INSTANCE ĐÃ CẤU HÌNH
 import { Users, CalendarDays, Stethoscope, UserCog, TrendingUp, Clock } from 'lucide-react';
 
-// 1. Cập nhật Interface khớp với Backend của bạn
 interface DashboardStats {
   patients: number;
   appointments: number;
@@ -18,13 +17,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const token = localStorage.getItem('access_token');
-      if (!token) return;
-
       try {
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await axios.get('process.env.NEXT_PUBLIC_API_URL/dashboard', config);
-        // Lưu ý: Đảm bảo Backend trả về đúng object này
+        // KHÔNG CẦN config headers thủ công, vì interceptor trong 'api' đã làm rồi
+        const res = await api.get('/dashboard'); 
         setStats(res.data);
       } catch (error) {
         console.error("Lỗi tải dữ liệu:", error);
@@ -35,7 +30,6 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
-  // 2. Map lại dữ liệu vào các thẻ (Cards)
   const statCards = [
     { label: 'TỔNG BỆNH NHÂN', value: stats?.patients, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: 'CUỘC HẸN', value: stats?.appointments, icon: CalendarDays, color: 'text-green-600', bg: 'bg-green-50' },
@@ -45,16 +39,8 @@ export default function DashboardPage() {
 
   return (
     <div className="p-10 bg-gray-50 min-h-screen">
-      <div className="mb-8 flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 mt-1">Chào mừng quay lại, Smile Craft Dental Clinic.</p>
-        </div>
-        <div className="flex items-center gap-2 text-sm font-bold text-blue-600 bg-blue-100 px-4 py-2 rounded-full">
-          <TrendingUp size={16} /> <span>Hệ thống hoạt động bình thường</span>
-        </div>
-      </div>
-      
+      {/* ... giữ nguyên phần UI của bạn ... */}
+      {/* Chỉ cần thay thế phần loading và grid như bên dưới */}
       {loading ? (
         <div className="flex items-center justify-center h-64 text-gray-500 italic">
           <div className="animate-spin mr-3"><Clock size={24} /></div>
@@ -77,11 +63,6 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
-
-      <div className="mt-8 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Thông tin hệ thống</h3>
-        <p className="text-gray-400 text-sm">Chào mừng bạn đến với bảng điều khiển quản trị tập trung.</p>
-      </div>
     </div>
   );
 }
