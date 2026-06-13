@@ -1,10 +1,15 @@
 import axios from 'axios';
 
+// Lấy URL từ biến môi trường, nếu không có sẽ mặc định về URL Backend của bạn
+// Lưu ý: Không để dấu / ở cuối URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dental-sc.onrender.com';
+
 export const api = axios.create({ 
-baseURL: process.env.NEXT_PUBLIC_API_URL || 'process.env.NEXT_PUBLIC_API_URL',  withCredentials: true, // Cho phép gửi cookie (nếu backend set cookie)
+  baseURL: API_URL, 
+  withCredentials: true, // Cho phép gửi cookie/session tới backend
 });
 
-// Interceptor cho Request: Luôn găm token mới nhất từ localStorage
+// Interceptor cho Request: Găm token từ localStorage vào header
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   if (token) {
@@ -13,11 +18,13 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Interceptor cho Response: Xử lý lỗi 401 (Unauthorized)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.log("CHI TIẾT LỖI TỪ BACKEND:", error.response?.data);
-    // Chỉ điều hướng nếu lỗi 401 và không phải đang ở trang login
+    console.error("CHI TIẾT LỖI TỪ BACKEND:", error.response?.data);
+    
+    // Nếu token hết hạn hoặc không hợp lệ, xóa dữ liệu và về trang login
     if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
       localStorage.clear();
       window.location.href = '/login';
@@ -26,7 +33,8 @@ api.interceptors.response.use(
   }
 );
 
-// Service quản lý Bác sĩ & Bệnh án (Master-Detail)
+// --- CÁC SERVICE QUẢN LÝ ---
+
 export const doctorService = {
   getAll: () => api.get('/users?role=DOCTOR'),
   getMedicalRecords: (doctorId?: number) => api.get('/medical-record', { params: { doctorId } }),
@@ -34,7 +42,6 @@ export const doctorService = {
   createMedicalRecord: (data: any) => api.post('/medical-record', data),
 };
 
-// Service quản lý Nhân viên & Lịch hẹn (Master-Detail)
 export const staffService = {
   getAll: () => api.get('/users?role=STAFF'),
   getAllAppointments: (staffId?: number) => api.get('/appointments', { params: { staffId } }),
@@ -42,7 +49,6 @@ export const staffService = {
   resetPassword: (id: number) => api.patch(`/users/${id}/reset-password`),
 };
 
-// Service quản lý Người dùng chung
 export const userService = {
   getAll: (role?: string) => api.get('/users', { params: { role } }),
   create: (data: any) => api.post('/users', data),
@@ -50,7 +56,6 @@ export const userService = {
   resetPassword: (id: number) => api.patch(`/users/${id}/reset-password`),
 };
 
-// Service xác thực
 export const authService = {
   login: (data: any) => api.post('/auth/login', data),
   getProfile: () => api.get('/auth/profile'),
