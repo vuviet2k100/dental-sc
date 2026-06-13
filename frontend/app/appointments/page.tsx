@@ -161,6 +161,13 @@ export default function AppointmentsPage() {
                 showTimeSelect
                 className="w-full p-2 border rounded"
               />
+
+              <select className="w-full p-2 border rounded" value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})}>
+                <option value="WAITING">Chờ khám</option>
+                <option value="CONFIRMED">Đã xác nhận</option>
+                <option value="DONE">Đã xong</option>
+                <option value="CANCELLED">Đã hủy</option>
+              </select>
             </div>
 
             <div className="mt-6 flex gap-2">
