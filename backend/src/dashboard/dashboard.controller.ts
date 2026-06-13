@@ -12,7 +12,7 @@ export class DashboardController {
 
   @Get()
   @Roles(Role.ADMIN, Role.DOCTOR, Role.STAFF) // ✨ CẬP NHẬT: Dùng Role.ADMIN từ Prisma thay vì chuỗi thô 'ADMIN' để đồng bộ Type
-  getDashboard() {
+  async getDashboard() {
     // ✨ CẬP NHẬT: Đổi từ getStats() thành getDashboardStats() để khớp với hàm trong Service của bạn
     return this.dashboardService.getDashboardStats(); 
   }
