@@ -45,13 +45,19 @@ export default function AppointmentsPage() {
 
   const handleOpenAddModal = () => {
     setEditingId(null);
-    setFormData({ 
-      patientId: '', 
-      doctorId: '', 
-      appointmentTime: new Date(), 
-      status: 'WAITING' 
-    });
+    setFormData({ patientId: '', doctorId: '', appointmentTime: new Date(), status: 'WAITING' });
     setIsOpenModal(true);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (confirm("Bạn có chắc chắn muốn xóa lịch hẹn này không?")) {
+      try {
+        await api.delete(`/appointments/${id}`);
+        fetchData(); // Tải lại danh sách sau khi xóa thành công
+      } catch (e) {
+        alert("Không thể xóa lịch hẹn!");
+      }
+    }
   };
 
   const handleSubmit = async () => {
@@ -88,10 +94,7 @@ export default function AppointmentsPage() {
       <div className="flex justify-between mb-8">
         <h2 className="text-3xl font-black">Quản lý lịch hẹn</h2>
         {!isLoading && role?.trim().toUpperCase() !== 'DOCTOR' && (
-          <button 
-            onClick={handleOpenAddModal} 
-            className="bg-blue-600 text-white px-5 py-3 rounded-xl hover:bg-blue-700"
-          >
+          <button onClick={handleOpenAddModal} className="bg-blue-600 text-white px-5 py-3 rounded-xl hover:bg-blue-700">
             + Thêm mới
           </button>
         )}
@@ -130,6 +133,8 @@ export default function AppointmentsPage() {
                     });
                     setIsOpenModal(true);
                   }} className="text-blue-500 mr-4 font-bold">Sửa</button>
+                  {/* Nút Xóa được thêm ở đây */}
+                  <button onClick={() => handleDelete(item.id)} className="text-red-500 font-bold">Xóa</button>
                 </td>
               )}
             </tr>
@@ -155,9 +160,7 @@ export default function AppointmentsPage() {
 
               <DatePicker 
                 selected={formData.appointmentTime} 
-                onChange={(date: Date | null) => {
-                  if (date) setFormData({...formData, appointmentTime: date});
-                }}
+                onChange={(date: Date | null) => { if (date) setFormData({...formData, appointmentTime: date}); }}
                 showTimeSelect
                 className="w-full p-2 border rounded"
               />

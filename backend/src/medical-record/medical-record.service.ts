@@ -80,6 +80,10 @@ export class MedicalRecordService {
   }
 
   async uploadImage(file: Express.Multer.File, recordId: number): Promise<string> {
+    // Kiểm tra recordId có tồn tại không trước khi upload
+  const record = await this.prisma.medicalRecord.findUnique({ where: { id: recordId } });
+  if (!record) throw new NotFoundException('Không tìm thấy bệnh án với ID này');
+  
     return new Promise((resolve, reject) => {
       const upload = cloudinary.uploader.upload_stream(
         { 

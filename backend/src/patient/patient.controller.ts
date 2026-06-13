@@ -4,6 +4,8 @@ import { Role } from '@/auth/enums/role.enum';
 import { Roles } from '@/auth/decorators/role.decorator';
 import { RolesGuard } from '@/auth/guards/roles.guard';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { UpdatePatientDto } from './dto/update-patient.dto';
+
 
 @Controller('patients')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -30,7 +32,7 @@ export class PatientController {
 
   @Patch(':id')
   @Roles(Role.ADMIN, Role.STAFF) // Admin/Staff được cập nhật
-  update(@Param('id') id: string, @Body() updatePatientDto: any) {
+  update(@Param('id') id: string, @Body() updatePatientDto: UpdatePatientDto) {
     return this.patientService.update(+id, updatePatientDto);
   }
 
