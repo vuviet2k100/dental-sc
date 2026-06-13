@@ -31,18 +31,17 @@ async function bootstrap() {
   
   // Cấu hình CORS chặt chẽ cho Vercel
   app.enableCors({
-  origin: (origin, callback) => {
-    // Nếu origin không tồn tại (ví dụ: gọi từ server-to-server hoặc công cụ test), cho phép luôn
-    // Hoặc bạn có thể thêm logic kiểm tra regex ở đây để cho phép tất cả các sub-domain của vercel.app
-    if (!origin || origin.endsWith('.vercel.app')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-  allowedHeaders: 'Content-Type,Authorization',
-  credentials: true,
+    origin: (origin, callback) => {
+      // Cho phép mọi request có origin là vercel.app hoặc localhost (để dev)
+      if (!origin || origin.endsWith('.vercel.app') || origin.startsWith('http://localhost')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // Đảm bảo đã có PATCH ở đây
+    allowedHeaders: 'Content-Type,Authorization',
+    credentials: true,
     preflightContinue: false, // Rất quan trọng: cho phép NestJS tự xử lý OPTIONS
     optionsSuccessStatus: 204, // Trình duyệt thích 204 cho preflight
   });
