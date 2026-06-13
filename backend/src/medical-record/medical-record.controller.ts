@@ -1,7 +1,7 @@
 import { 
   Controller, Get, Post, Body, Patch, Param, Delete, 
   UseGuards, ParseIntPipe, UseInterceptors, UploadedFile, 
-  Req, BadRequestException, Query 
+  Req, BadRequestException, Query, InternalServerErrorException
 } from '@nestjs/common';
 import { MedicalRecordService } from './medical-record.service';
 import { CreateMedicalRecordDto } from './dto/create-medical-record.dto';
@@ -52,7 +52,6 @@ export class MedicalRecordController {
     return this.medicalRecordService.remove(id);
   }
 
-  // SỬA ĐỔI PHẦN UPLOAD: Dùng Service để xử lý stream lên Cloudinary
   @Post('upload/:id')
   @Roles(Role.ADMIN, Role.DOCTOR)
   @UseInterceptors(FileInterceptor('file')) 
@@ -62,9 +61,16 @@ export class MedicalRecordController {
   ) {
     if (!file) throw new BadRequestException('Vui lòng chọn tệp tin!');
     
-    // Gọi thẳng Service đã tích hợp Cloudinary
-    // Truyền cả file (buffer) và id của hồ sơ bệnh án
-    return await this.medicalRecordService.uploadImage(file, id);
+    try {
+      return await this.medicalRecordService.uploadImage(file, id);
+    } catch (error: unknown) {
+      // Ép kiểu lỗi an toàn để tránh lỗi TypeScript 'unknown'
+      const message = error instanceof Error ? error.message : 'Lỗi không xác định';
+      console.error("Lỗi upload chi tiết:", error);
+      
+      // Trả về InternalServerError thay vì làm crash server
+      throw new InternalServerErrorException(`Không thể tải ảnh lên: ${message}`);
+    }
   }
 
   @Delete('image/:imageId')
