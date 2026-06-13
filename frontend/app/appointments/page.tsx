@@ -23,9 +23,8 @@ export default function AppointmentsPage() {
 
   const fetchData = async () => {
     try {
-      // Dùng các service đã cấu hình sẵn trong api.ts
       const [appRes, pRes, dRes] = await Promise.all([
-        staffService.getAllAppointments(), // Đã tự động kèm token
+        staffService.getAllAppointments(),
         staffService.getAllPatients(),
         userService.getAll('DOCTOR')
       ]);
@@ -33,7 +32,7 @@ export default function AppointmentsPage() {
       setPatients(pRes.data || []);
       setDoctors(dRes.data || []);
     } catch (error) { 
-      console.error("Lỗi fetch:", error); 
+      console.error("Lỗi fetch dữ liệu:", error); 
     } finally {
       setIsLoading(false);
     }
@@ -44,20 +43,19 @@ export default function AppointmentsPage() {
     fetchData(); 
   }, []);
 
-  const handleEdit = (item: any) => { 
-    setEditingId(item.id);
+  const handleOpenAddModal = () => {
+    setEditingId(null);
     setFormData({ 
-      patientId: item.patientId?.toString() || '', 
-      doctorId: item.doctorId?.toString() || '', 
-      appointmentTime: new Date(item.appointmentTime),
-      status: item.status
+      patientId: '', 
+      doctorId: '', 
+      appointmentTime: new Date(), 
+      status: 'WAITING' 
     });
-    setIsOpenModal(true); 
+    setIsOpenModal(true);
   };
 
   const handleSubmit = async () => {
-    const currentStaffId = localStorage.getItem('user_id'); // Lấy staffId từ localStorage nếu có
-    
+    const currentStaffId = localStorage.getItem('user_id');
     const payload = {
       patientId: parseInt(formData.patientId),
       doctorId: parseInt(formData.doctorId),
@@ -72,7 +70,6 @@ export default function AppointmentsPage() {
     }
 
     try {
-      // Dùng 'api' instance để tự động đính kèm token
       if (editingId) {
         await api.patch(`/appointments/${editingId}`, payload);
       } else {
@@ -81,19 +78,8 @@ export default function AppointmentsPage() {
       setIsOpenModal(false);
       fetchData();
     } catch (e: any) { 
-      console.error(e);
+      console.error("Lỗi lưu:", e);
       alert(e.response?.data?.message || "Lỗi lưu dữ liệu!"); 
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (confirm("Bạn có chắc chắn muốn xóa?")) {
-      try {
-        await api.delete(`/appointments/${id}`);
-        fetchData();
-      } catch (e) {
-        alert("Không thể xóa!");
-      }
     }
   };
 
@@ -103,12 +89,7 @@ export default function AppointmentsPage() {
         <h2 className="text-3xl font-black">Quản lý lịch hẹn</h2>
         {!isLoading && role?.trim().toUpperCase() !== 'DOCTOR' && (
           <button 
-            onClick={() => { 
-              console.log("Bấm nút!")
-              // setEditingId(null); 
-              // setFormData({ patientId: '', doctorId: '', appointmentTime: new Date(), status: 'WAITING' }); 
-              // setIsOpenModal(true); 
-            }} 
+            onClick={handleOpenAddModal} 
             className="bg-blue-600 text-white px-5 py-3 rounded-xl hover:bg-blue-700"
           >
             + Thêm mới
@@ -139,8 +120,16 @@ export default function AppointmentsPage() {
               </td>
               {!isLoading && role?.trim().toUpperCase() !== 'DOCTOR' && (
                 <td className="p-4 text-center">
-                  <button onClick={() => handleEdit(item)} className="text-blue-500 mr-4 font-bold">Sửa</button>
-                  <button onClick={() => handleDelete(item.id)} className="text-red-500 font-bold">Xóa</button>
+                  <button onClick={() => {
+                    setEditingId(item.id);
+                    setFormData({
+                      patientId: item.patientId?.toString() || '',
+                      doctorId: item.doctorId?.toString() || '',
+                      appointmentTime: new Date(item.appointmentTime),
+                      status: item.status
+                    });
+                    setIsOpenModal(true);
+                  }} className="text-blue-500 mr-4 font-bold">Sửa</button>
                 </td>
               )}
             </tr>
@@ -148,17 +137,38 @@ export default function AppointmentsPage() {
         </tbody>
       </table>
 
-      {/* Modal giữ nguyên logic cũ nhưng đảm bảo dữ liệu hiển thị tốt */}
       {isOpenModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div className="bg-white p-10 rounded-xl">
-      <h2 className="mb-4">Test Modal</h2>
-      <button onClick={() => setIsOpenModal(false)} className="bg-red-500 text-white p-2">Đóng</button>
-    </div>
-  </div>
-        // <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        //    {/* ... code modal giữ nguyên ... */}
-        // </div>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl w-96">
+            <h2 className="text-xl font-bold mb-4">{editingId ? 'Sửa lịch hẹn' : 'Thêm lịch hẹn'}</h2>
+            
+            <div className="space-y-4">
+              <select className="w-full p-2 border rounded" value={formData.patientId} onChange={(e) => setFormData({...formData, patientId: e.target.value})}>
+                <option value="">Chọn bệnh nhân</option>
+                {patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+
+              <select className="w-full p-2 border rounded" value={formData.doctorId} onChange={(e) => setFormData({...formData, doctorId: e.target.value})}>
+                <option value="">Chọn bác sĩ</option>
+                {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+
+              <DatePicker 
+                selected={formData.appointmentTime} 
+                onChange={(date: Date | null) => {
+                  if (date) setFormData({...formData, appointmentTime: date});
+                }}
+                showTimeSelect
+                className="w-full p-2 border rounded"
+              />
+            </div>
+
+            <div className="mt-6 flex gap-2">
+              <button onClick={handleSubmit} className="flex-1 bg-blue-600 text-white p-2 rounded">Lưu</button>
+              <button onClick={() => setIsOpenModal(false)} className="flex-1 bg-gray-300 p-2 rounded">Đóng</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
