@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Gán cứng URL Backend để tránh lỗi process.env không được load trên Vercel
+// Gán cứng URL Backend để tránh lỗi process.env trên Vercel
 const API_URL = 'https://dental-sc.onrender.com/api'; 
 
 export const api = axios.create({ 
@@ -27,7 +27,8 @@ api.interceptors.response.use(
   }
 );
 
-// Các service đã được bỏ /api (vì đã nằm trong baseURL)
+// --- CÁC SERVICE (Phải có từ khóa export) ---
+
 export const doctorService = {
   getAll: () => api.get('/users?role=DOCTOR'),
   getMedicalRecords: (doctorId?: number) => api.get('/medical-record', { params: { doctorId } }),
@@ -42,8 +43,20 @@ export const staffService = {
   resetPassword: (id: number) => api.patch(`/users/${id}/reset-password`),
 };
 
+// Đảm bảo userService này ĐÃ CÓ từ khóa export ở đầu dòng
+export const userService = {
+  getAll: (role?: string) => api.get('/users', { params: { role } }),
+  create: (data: any) => api.post('/users', data),
+  delete: (id: number) => api.delete(`/users/${id}`),
+  resetPassword: (id: number) => api.patch(`/users/${id}/reset-password`),
+};
+
 export const authService = {
   login: (data: any) => api.post('/auth/login', data),
   getProfile: () => api.get('/auth/profile'),
   changePassword: (data: any) => api.patch('/auth/change-password', data),
+};
+
+export const patientService = {
+  delete: (id: number) => api.delete(`/patients/${id}`),
 };
