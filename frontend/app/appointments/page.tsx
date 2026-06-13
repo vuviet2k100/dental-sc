@@ -150,8 +150,14 @@ export default function AppointmentsPage() {
       {/* Modal giữ nguyên logic cũ nhưng đảm bảo dữ liệu hiển thị tốt */}
       {isOpenModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-           {/* ... code modal giữ nguyên ... */}
-        </div>
+    <div className="bg-white p-10 rounded-xl">
+      <h2 className="mb-4">Test Modal</h2>
+      <button onClick={() => setIsOpenModal(false)} className="bg-red-500 text-white p-2">Đóng</button>
+    </div>
+  </div>
+        // <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        //    {/* ... code modal giữ nguyên ... */}
+        // </div>
       )}
     </div>
   );
