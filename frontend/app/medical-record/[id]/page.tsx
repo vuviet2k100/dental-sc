@@ -28,7 +28,7 @@ export default function RecordDetail() {
 
   const fetchRecord = async () => {
     try {
-      const res = await axios.get(`http://localhost:3000/medical-record/${id}`, {
+      const res = await axios.get(`process.env.NEXT_PUBLIC_API_URL/medical-record/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
       });
       setRecord(res.data);
@@ -43,7 +43,7 @@ export default function RecordDetail() {
   const handleUpdate = async () => {
     setIsUpdating(true);
     try {
-      await axios.patch(`http://localhost:3000/medical-record/${id}`, formData, {
+      await axios.patch(`process.env.NEXT_PUBLIC_API_URL/medical-record/${id}`, formData, {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
       });
       alert('Cập nhật thành công!');
@@ -55,7 +55,7 @@ export default function RecordDetail() {
     if (!confirm('Bạn có chắc muốn xóa?')) return;
     setIsDeleting(true);
     try {
-      await axios.delete(`http://localhost:3000/medical-record/${id}`, {
+      await axios.delete(`process.env.NEXT_PUBLIC_API_URL/medical-record/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
       });
       router.push('/medical-record');
@@ -69,7 +69,7 @@ export default function RecordDetail() {
     const data = new FormData();
     data.append('file', file);
     try {
-      await axios.post(`http://localhost:3000/medical-record/upload/${id}`, data, {
+      await axios.post(`process.env.NEXT_PUBLIC_API_URL/medical-record/upload/${id}`, data, {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
       });
       await fetchRecord();
@@ -79,7 +79,7 @@ export default function RecordDetail() {
   const handleDeleteImage = async (imageId: number) => {
     if (!confirm('Xóa ảnh này?')) return;
     try {
-      await axios.delete(`http://localhost:3000/medical-record/image/${imageId}`, {
+      await axios.delete(`process.env.NEXT_PUBLIC_API_URL/medical-record/image/${imageId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
       });
       await fetchRecord();
@@ -119,7 +119,7 @@ export default function RecordDetail() {
           <div className="grid grid-cols-3 gap-4 mb-6">
             {record.images?.map((img: any) => (
               <div key={img.id} className="relative group rounded-lg overflow-hidden border">
-                <img src={`http://localhost:3000${img.imageUrl}`} className="w-full h-32 object-cover" />
+                <img src={`process.env.NEXT_PUBLIC_API_URL${img.imageUrl}`} className="w-full h-32 object-cover" />
                 {!isStaff && (
                   <button onClick={() => handleDeleteImage(img.id)} className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition">
                     <Trash2 size={16} />

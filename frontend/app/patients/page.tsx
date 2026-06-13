@@ -22,7 +22,7 @@ export default function PatientsPage() {
 
   const fetchData = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/patients', getAuthConfig());
+      const res = await axios.get('process.env.NEXT_PUBLIC_API_URL/patients', getAuthConfig());
       setList(res.data || []);
     } catch (err: any) {
       if (err.response?.status === 401) router.push('/login');
@@ -37,8 +37,8 @@ export default function PatientsPage() {
 
     try {
       const payload = { name: form.name, phone: form.phone, birthDate: form.birthDate, gender: form.gender, address: form.address };
-      if (isEditing && form.id) await axios.patch(`http://localhost:3000/patients/${form.id}`, payload, getAuthConfig());
-      else await axios.post('http://localhost:3000/patients', payload, getAuthConfig());
+      if (isEditing && form.id) await axios.patch(`process.env.NEXT_PUBLIC_API_URL/patients/${form.id}`, payload, getAuthConfig());
+      else await axios.post('process.env.NEXT_PUBLIC_API_URL/patients', payload, getAuthConfig());
       
       setForm({ id: null, name: '', phone: '', birthDate: '', gender: 'Nam', address: '' });
       setIsEditing(false);
@@ -53,7 +53,7 @@ export default function PatientsPage() {
 
   const deletePatient = async (id: number) => {
     if (!window.confirm("Xác nhận xóa bệnh nhân?")) return;
-    try { await axios.delete(`http://localhost:3000/patients/${id}`, getAuthConfig()); fetchData(); } 
+    try { await axios.delete(`process.env.NEXT_PUBLIC_API_URL/patients/${id}`, getAuthConfig()); fetchData(); } 
     catch (err: any) { alert("Chỉ Admin mới có quyền xóa!"); }
   };
 

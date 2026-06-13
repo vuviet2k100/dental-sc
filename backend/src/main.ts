@@ -29,7 +29,7 @@ async function bootstrap() {
   // Trong .env, bạn để: ALLOWED_ORIGINS=http://localhost:3000,https://abc.vercel.app
   const allowedOrigins = process.env.ALLOWED_ORIGINS 
     ? process.env.ALLOWED_ORIGINS.split(',') 
-    : ['http://localhost:3000'];
+    : ['process.env.NEXT_PUBLIC_API_URL'];
 
   app.enableCors({
     origin: (origin, callback) => {

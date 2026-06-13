@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const api = axios.create({ 
-baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',  withCredentials: true, // Cho phép gửi cookie (nếu backend set cookie)
+baseURL: process.env.NEXT_PUBLIC_API_URL || 'process.env.NEXT_PUBLIC_API_URL',  withCredentials: true, // Cho phép gửi cookie (nếu backend set cookie)
 });
 
 // Interceptor cho Request: Luôn găm token mới nhất từ localStorage

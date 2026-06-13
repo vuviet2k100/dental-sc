@@ -24,7 +24,7 @@ export default function Register() {
 
     // 2. Chọn route dựa trên role đã chọn
     const endpoint = formData.role === 'DOCTOR' ? '/auth/register/doctor' : '/auth/register/staff';
-    const url = `http://localhost:3000${endpoint}`;
+    const url = `process.env.NEXT_PUBLIC_API_URL${endpoint}`;
 
     setLoading(true);
     try {

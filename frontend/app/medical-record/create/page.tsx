@@ -29,7 +29,7 @@ function CreateFormContent() {
     setLoading(true);
     try {
       const token = localStorage.getItem('access_token');
-      const response = await axios.post(`http://localhost:3000/medical-record`, {
+      const response = await axios.post(`process.env.NEXT_PUBLIC_API_URL/medical-record`, {
         ...formData,
         patientId: Number(patientId),
         doctorId: 1, // Lưu ý: Trong thực tế nên lấy từ token hoặc AuthContext

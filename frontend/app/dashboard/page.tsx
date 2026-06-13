@@ -23,7 +23,7 @@ export default function DashboardPage() {
 
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await axios.get('http://localhost:3000/dashboard', config);
+        const res = await axios.get('process.env.NEXT_PUBLIC_API_URL/dashboard', config);
         // Lưu ý: Đảm bảo Backend trả về đúng object này
         setStats(res.data);
       } catch (error) {

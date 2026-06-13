@@ -20,7 +20,7 @@ export default function PatientDetailPage() {
 
   const fetchData = async () => {
     try {
-      const res = await axios.get(`http://localhost:3000/patients/${id}`, {
+      const res = await axios.get(`process.env.NEXT_PUBLIC_API_URL/patients/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
       });
       setPatient(res.data);

@@ -16,7 +16,7 @@ export default function AdminStaffsPage() {
     if (!token) { router.push('/login'); return; }
 
     try {
-      const res = await axios.get('http://localhost:3000/users?role=STAFF', {
+      const res = await axios.get('process.env.NEXT_PUBLIC_API_URL/users?role=STAFF', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStaffs(res.data);
@@ -33,7 +33,7 @@ export default function AdminStaffsPage() {
     if (!confirm("Bạn có chắc muốn đặt lại mật khẩu nhân viên này về 123456?")) return;
     try {
       const token = localStorage.getItem('access_token');
-      await axios.patch(`http://localhost:3000/users/${id}/reset-password`, {}, {
+      await axios.patch(`process.env.NEXT_PUBLIC_API_URL/users/${id}/reset-password`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert("Reset mật khẩu thành công!");

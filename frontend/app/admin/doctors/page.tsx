@@ -11,7 +11,7 @@ export default function AdminDoctorsPage() {
   useEffect(() => {
     // Gọi API lấy danh sách bác sĩ
     const fetchDoctors = async () => {
-      const res = await axios.get('http://localhost:3000/users?role=DOCTOR');
+      const res = await axios.get('process.env.NEXT_PUBLIC_API_URL/users?role=DOCTOR');
       setDoctors(res.data);
     };
     fetchDoctors();
@@ -19,7 +19,7 @@ export default function AdminDoctorsPage() {
 
   const handleResetPassword = async (id: number) => {
     if (confirm("Reset mật khẩu về 123456?")) {
-      await axios.patch(`http://localhost:3000/users/${id}/reset-password`);
+      await axios.patch(`process.env.NEXT_PUBLIC_API_URL/users/${id}/reset-password`);
       alert("Đã reset!");
     }
   };

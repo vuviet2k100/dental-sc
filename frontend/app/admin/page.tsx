@@ -10,7 +10,7 @@ export default function DashboardPage() {
     const fetchDashboard = async () => {
       try {
         const token = localStorage.getItem('access_token');
-        const res = await axios.get('http://localhost:3000/dashboard', {
+        const res = await axios.get('process.env.NEXT_PUBLIC_API_URL/dashboard', {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
         

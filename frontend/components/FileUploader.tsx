@@ -18,7 +18,7 @@ export default function FileUploader({ recordId, onUploadSuccess }: Props) {
     formData.append('file', file); // Phải khớp với 'file' trong @UseInterceptors(FileInterceptor('file'))
 
     try {
-      await axios.post(`http://localhost:3000/medical-record/upload/${recordId}`, formData, {
+      await axios.post(`process.env.NEXT_PUBLIC_API_URL/medical-record/upload/${recordId}`, formData, {
         headers: { 
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'multipart/form-data' 
