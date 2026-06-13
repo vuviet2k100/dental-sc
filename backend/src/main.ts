@@ -4,40 +4,40 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as dotenv from 'dotenv';
 import { v2 as cloudinary } from 'cloudinary';
+import * as express from 'express';
 
 dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  const logger = new Logger('Bootstrap');
+  
+  // Tăng giới hạn để xử lý ảnh
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-  // 1. Cấu hình Cloudinary
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 
-  // 2. Validate dữ liệu
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,
     transform: true,
   }));
 
-  // 3. Cấu hình tiền tố API và CORS
-  app.setGlobalPrefix('api'); // Tất cả route sẽ bắt đầu bằng /api
+  app.setGlobalPrefix('api');
+  
+  // Cấu hình CORS chặt chẽ cho Vercel
   app.enableCors({
-    origin: true, // Cho phép tất cả nguồn (tạm thời để test)
+    origin: ['https://dental-69ef4hlc8-vuviet2k100-2082s-projects.vercel.app'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type, Authorization', // Đảm bảo đã có Authorization ở đây
-    credentials: true ,
+    allowedHeaders: 'Content-Type,Authorization',
+    credentials: true,
   });
 
-  // 4. Khởi chạy server
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 10000;
   await app.listen(port, '0.0.0.0');
-  logger.log(`Application is running on port: ${port}`);
 }
-
 bootstrap();
