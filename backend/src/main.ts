@@ -30,7 +30,8 @@ async function bootstrap() {
   app.enableCors({
     origin: true, // Cho phép tất cả nguồn (tạm thời để test)
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true,
+    allowedHeaders: 'Content-Type, Authorization', // Đảm bảo đã có Authorization ở đây
+    credentials: true ,
   });
 
   // 4. Khởi chạy server
