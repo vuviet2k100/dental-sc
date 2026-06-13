@@ -104,9 +104,10 @@ export default function AppointmentsPage() {
         {!isLoading && role?.trim().toUpperCase() !== 'DOCTOR' && (
           <button 
             onClick={() => { 
-              setEditingId(null); 
-              setFormData({ patientId: '', doctorId: '', appointmentTime: new Date(), status: 'WAITING' }); 
-              setIsOpenModal(true); 
+              console.log("Bấm nút!")
+              // setEditingId(null); 
+              // setFormData({ patientId: '', doctorId: '', appointmentTime: new Date(), status: 'WAITING' }); 
+              // setIsOpenModal(true); 
             }} 
             className="bg-blue-600 text-white px-5 py-3 rounded-xl hover:bg-blue-700"
           >
