@@ -18,7 +18,7 @@ export default function AdminDoctorsPage() {
     if (confirm(`Bạn có chắc chắn muốn đặt lại mật khẩu cho BS. ${name}?`)) {
       try {
         await userService.resetPassword(id);
-        alert("Reset mật khẩu thành công (Mật khẩu mặc định: 123)");
+        alert("Reset mật khẩu thành công! (Mật khẩu mặc định: 123456)");
       } catch (err) {
         alert("Có lỗi xảy ra khi reset mật khẩu!");
       }

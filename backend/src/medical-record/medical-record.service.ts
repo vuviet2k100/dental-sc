@@ -16,7 +16,8 @@ export class MedicalRecordService {
         treatment: dto.treatment, 
         note: dto.note, 
         patientId: dto.patientId, 
-        doctorId: dto.doctorId 
+        doctorId: dto.doctorId,
+        appointmentId: dto.appointmentId,
       }
     });
   }

@@ -35,6 +35,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
   handleRequest(err: any, user: any, info: any, context: any) {
     if (err || !user) {
+      console.log('--- AuthGuard từ chối ---');
+      console.log('Lỗi (err):', err);
+      console.log('Thông tin (info):', info); // Cái này quan trọng nhất
       throw err || new UnauthorizedException();
     }
     return user;

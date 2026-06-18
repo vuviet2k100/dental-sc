@@ -19,7 +19,7 @@ export default function Sidebar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    // Đảm bảo lấy đúng key bạn đã lưu trong LoginPage
+    // Lấy thông tin role từ localStorage
     setRole(localStorage.getItem('user_role'));
   }, []);
 
@@ -31,6 +31,7 @@ export default function Sidebar() {
     { name: 'Nhân viên', path: '/staff', icon: UserCog },
   ];
 
+  // Logic lọc menu theo quyền
   const filteredMenuItems = baseMenuItems.filter((item) => {
     if (role === 'ADMIN') return true;
     if (role === 'DOCTOR' || role === 'STAFF') {
@@ -52,6 +53,7 @@ export default function Sidebar() {
       case 'DOCTOR': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
       case 'STAFF': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
       case 'PATIENT': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+      case 'SALE': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
       default: return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
     }
   };
@@ -99,6 +101,18 @@ export default function Sidebar() {
           </div>
         </button>
 
+        {/* Nút Đăng ký tài khoản (Chỉ hiển thị với ADMIN) */}
+        {role === 'ADMIN' && (
+          <Link 
+            href="/register" 
+            className="flex items-center gap-3 w-full p-3 text-sm text-emerald-400 hover:bg-emerald-500/5 rounded-xl transition border border-emerald-500/10 border-dashed"
+          >
+            <UserCog size={18} />
+            <span>Đăng ký tài khoản</span>
+          </Link>
+        )}
+
+        {/* Nút Đăng xuất */}
         <button 
           onClick={handleLogout} 
           className="flex items-center gap-3 w-full p-3 text-sm text-red-400 hover:bg-red-500/5 rounded-xl transition"

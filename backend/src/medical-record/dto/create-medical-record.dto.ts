@@ -14,6 +14,9 @@ export class CreateMedicalRecordDto {
   @IsInt()
   patientId!: number;
 
+  @IsInt()
+  appointmentId!: number;
+
   @IsOptional()
   @IsInt()
   doctorId!: number;

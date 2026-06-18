@@ -8,14 +8,18 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   constructor() {
     // 1. Tạo Pool kết nối PostgreSQL
     const pool = new Pool({ 
-      connectionString: process.env.DATABASE_URL 
+      connectionString: process.env.DATABASE_URL, 
+      ssl: {
+        rejectUnauthorized: false // Bắt buộc cho Neon DB
+      }
+    
     });
 
     // 2. Tạo Adapter (Đây là yêu cầu bắt buộc của Prisma 7 khi dùng engine client)
     const adapter = new PrismaPg(pool);
 
     // 3. Khởi tạo PrismaClient với adapter
-    super({ adapter });
+    super({ adapter } as any );
   }
 
   async onModuleInit() {

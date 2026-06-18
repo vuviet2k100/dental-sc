@@ -15,7 +15,8 @@ export default function AppointmentsPage() {
     patientId: '', 
     doctorId: '', 
     appointmentTime: new Date(),
-    status: 'WAITING' 
+    status: 'WAITING',
+    note: '' 
   });
   
   const [role, setRole] = useState<string | null>(null);
@@ -45,7 +46,13 @@ export default function AppointmentsPage() {
 
   const handleOpenAddModal = () => {
     setEditingId(null);
-    setFormData({ patientId: '', doctorId: '', appointmentTime: new Date(), status: 'WAITING' });
+    setFormData({ 
+      patientId: '', 
+      doctorId: '', 
+      appointmentTime: new Date(), 
+      status: 'WAITING', 
+      note: '' 
+    });
     setIsOpenModal(true);
   };
 
@@ -53,7 +60,7 @@ export default function AppointmentsPage() {
     if (confirm("Bạn có chắc chắn muốn xóa lịch hẹn này không?")) {
       try {
         await api.delete(`/appointments/${id}`);
-        fetchData(); // Tải lại danh sách sau khi xóa thành công
+        fetchData();
       } catch (e) {
         alert("Không thể xóa lịch hẹn!");
       }
@@ -67,6 +74,7 @@ export default function AppointmentsPage() {
       doctorId: parseInt(formData.doctorId),
       appointmentTime: formData.appointmentTime.toISOString(),
       status: formData.status,
+      note: formData.note,
       staffId: currentStaffId ? parseInt(currentStaffId) : null
     };
 
@@ -84,7 +92,7 @@ export default function AppointmentsPage() {
       setIsOpenModal(false);
       fetchData();
     } catch (e: any) { 
-      console.error("Lỗi lưu:", e);
+      console.error("Lỗi lưu dữ liệu:", e);
       alert(e.response?.data?.message || "Lỗi lưu dữ liệu!"); 
     }
   };
@@ -107,6 +115,7 @@ export default function AppointmentsPage() {
             <th className="p-4 text-left">Bác sĩ</th>
             <th className="p-4 text-left">Thời gian</th>
             <th className="p-4 text-center">Trạng thái</th>
+            <th className="p-4 text-left">Ghi chú</th>
             {!isLoading && role?.trim().toUpperCase() !== 'DOCTOR' && <th className="p-4 text-center">Thao tác</th>}
           </tr>
         </thead>
@@ -117,10 +126,11 @@ export default function AppointmentsPage() {
               <td className="p-4">{item.doctor?.name || '---'}</td>
               <td className="p-4">{new Date(item.appointmentTime).toLocaleString()}</td>
               <td className="p-4 text-center">
-                <span className={`px-3 py-1 rounded-full text-xs ${item.status === 'DONE' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-700`}>
                   {item.status}
                 </span>
               </td>
+              <td className="p-4 text-sm text-slate-600 italic">{item.note || '---'}</td>
               {!isLoading && role?.trim().toUpperCase() !== 'DOCTOR' && (
                 <td className="p-4 text-center">
                   <button onClick={() => {
@@ -129,11 +139,11 @@ export default function AppointmentsPage() {
                       patientId: item.patientId?.toString() || '',
                       doctorId: item.doctorId?.toString() || '',
                       appointmentTime: new Date(item.appointmentTime),
-                      status: item.status
+                      status: item.status,
+                      note: item.note || ''
                     });
                     setIsOpenModal(true);
                   }} className="text-blue-500 mr-4 font-bold">Sửa</button>
-                  {/* Nút Xóa được thêm ở đây */}
                   <button onClick={() => handleDelete(item.id)} className="text-red-500 font-bold">Xóa</button>
                 </td>
               )}
@@ -142,9 +152,10 @@ export default function AppointmentsPage() {
         </tbody>
       </table>
 
+      {/* Modal Thêm/Sửa */}
       {isOpenModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-          <div className="bg-white p-8 rounded-2xl shadow-2xl w-96">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl w-[400px]">
             <h2 className="text-xl font-bold mb-4">{editingId ? 'Sửa lịch hẹn' : 'Thêm lịch hẹn'}</h2>
             
             <div className="space-y-4">
@@ -163,19 +174,33 @@ export default function AppointmentsPage() {
                 onChange={(date: Date | null) => { if (date) setFormData({...formData, appointmentTime: date}); }}
                 showTimeSelect
                 className="w-full p-2 border rounded"
+                dateFormat="dd/MM/yyyy HH:mm"
               />
 
-              <select className="w-full p-2 border rounded" value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})}>
+              <select className="w-full p-2 border rounded" 
+                value={formData.status} 
+                onChange={(e) => {
+                  const newStatus = e.target.value;
+                  setFormData(prev => ({...prev, status: newStatus}));
+                }}
+                >
                 <option value="WAITING">Chờ khám</option>
-                <option value="CONFIRMED">Đã xác nhận</option>
+                <option value="IN_PROGRESS">Đã xác nhận</option>
                 <option value="DONE">Đã xong</option>
                 <option value="CANCELLED">Đã hủy</option>
               </select>
+
+              <textarea 
+                className="w-full p-2 border rounded" 
+                placeholder="Ghi chú tình trạng..."
+                value={formData.note} 
+                onChange={(e) => setFormData({...formData, note: e.target.value})}
+              />
             </div>
 
             <div className="mt-6 flex gap-2">
-              <button onClick={handleSubmit} className="flex-1 bg-blue-600 text-white p-2 rounded">Lưu</button>
-              <button onClick={() => setIsOpenModal(false)} className="flex-1 bg-gray-300 p-2 rounded">Đóng</button>
+              <button onClick={handleSubmit} className="flex-1 bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Lưu</button>
+              <button onClick={() => setIsOpenModal(false)} className="flex-1 bg-gray-300 p-2 rounded hover:bg-gray-400">Đóng</button>
             </div>
           </div>
         </div>

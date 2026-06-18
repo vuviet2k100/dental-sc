@@ -1,14 +1,19 @@
 import axios from 'axios';
 
-// Đây là file module vì có lệnh export const api
 export const api = axios.create({
-  baseURL: 'https://dental-sc.onrender.com/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  withCredentials: true, // THÊM DÒNG NÀY VÀO
 });
 
 api.interceptors.request.use((config) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  // Chỉ lấy token nếu đang ở trên trình duyệt
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }else {
+      console.warn("Không tìm thấy token trong localStorage!");
+    }
   }
   return config;
 });

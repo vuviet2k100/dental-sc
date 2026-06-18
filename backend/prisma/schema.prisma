@@ -1,10 +1,10 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
-  //url      = env("DATABASE_URL") // Bắt buộc phải có env để deploy lên Render
 }
 
 enum Role {
@@ -21,17 +21,24 @@ enum AppointmentStatus {
   CANCELLED
 }
 
+// Bổ sung Enum Gender
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   name      String
   email     String?  @unique
   password  String
-  role      Role     @default(PATIENT) 
+  role      Role     @default(PATIENT)
   createdAt DateTime @default(now())
 
   appointments      Appointment[]
   medicalRecords    MedicalRecord[]
-  staffAppointments Appointment[] @relation("StaffAppointments")
+  staffAppointments Appointment[]   @relation("StaffAppointments")
 
   @@map("Users")
 }
@@ -40,7 +47,7 @@ model Patient {
   id        Int       @id @default(autoincrement())
   name      String
   phone     String    @unique
-  gender    String?
+  gender    Gender?   // Sử dụng Enum Gender
   birthDate DateTime?
   address   String?
   createdAt DateTime  @default(now())
@@ -54,17 +61,18 @@ model Appointment {
   id              Int               @id @default(autoincrement())
   appointmentTime DateTime
   note            String?
-  status          AppointmentStatus @default(WAITING) // Thêm giá trị mặc định
+  status          AppointmentStatus @default(WAITING)
   createdAt       DateTime          @default(now())
 
   patientId Int
   doctorId  Int
-  staffId   Int? 
-  
-  patient Patient @relation(fields: [patientId], references: [id])
-  doctor  User    @relation(fields: [doctorId], references: [id])
-  staff   User?   @relation("StaffAppointments", fields: [staffId], references: [id])
-  
+  staffId   Int?
+
+  patient       Patient        @relation(fields: [patientId], references: [id])
+  doctor        User           @relation(fields: [doctorId], references: [id])
+  staff         User?          @relation("StaffAppointments", fields: [staffId], references: [id])
+  medicalRecord MedicalRecord? // Quan hệ 1-1 với MedicalRecord
+
   @@map("Appointments")
 }
 
@@ -74,22 +82,22 @@ model MedicalRecord {
   treatment String
   note      String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt // Bổ sung để theo dõi lịch sử chỉnh sửa
+  updatedAt DateTime @updatedAt
 
-  patientId Int
-  doctorId  Int
+  patientId     Int
+  doctorId      Int
+  appointmentId Int @unique // Ràng buộc 1-1 với Appointment
 
-  patient Patient @relation(fields: [patientId], references: [id])
-  doctor  User    @relation(fields: [doctorId], references: [id])
-
-  images    TreatmentImage[]
+  patient     Patient        @relation(fields: [patientId], references: [id])
+  doctor      User           @relation(fields: [doctorId], references: [id])
+  appointment Appointment    @relation(fields: [appointmentId], references: [id])
+  images      TreatmentImage[]
 }
 
 model TreatmentImage {
   id              Int           @id @default(autoincrement())
-  url             String        // Đây là link từ Cloudinary
+  url             String
   createdAt       DateTime      @default(now())
   medicalRecordId Int
-  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade) 
-  // Thêm onDelete: Cascade để khi xóa hồ sơ bệnh án, ảnh tự xóa theo, tránh rác DB
+  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
 }

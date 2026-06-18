@@ -1,5 +1,5 @@
-import { IsString, IsNotEmpty, IsOptional, IsISO8601, IsPhoneNumber } from 'class-validator';
-
+import { IsString, IsNotEmpty, IsOptional, IsISO8601, IsPhoneNumber, IsEnum } from 'class-validator';
+import { Gender } from '@prisma/client'
 export class CreatePatientDto {
   @IsString()
   @IsNotEmpty({ message: 'Họ và tên không được để trống' })
@@ -13,9 +13,9 @@ export class CreatePatientDto {
   @IsNotEmpty({ message: 'Ngày sinh là bắt buộc' })
   birthDate!: string; // Chuyển từ frontend lên dưới dạng chuỗi ISO
 
-  @IsString()
   @IsOptional()
-  gender?: string; // Ví dụ: 'Nam', 'Nữ', 'Khác'
+  @IsEnum(Gender)
+  gender?: Gender; // Ví dụ: 'Nam', 'Nữ', 'Khác'
 
   @IsString()
   @IsOptional()

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { api } from '@/app/lib/axios'; // Import instance api đã cấu hình
+import { api } from '@/app/lib/axios';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -22,7 +22,6 @@ export default function PatientsPage() {
 
   const fetchData = async () => {
     try {
-      // Dùng instance api thay vì axios
       const res = await api.get('/patients');
       setList(res.data || []);
     } catch (err: any) {
@@ -39,7 +38,13 @@ export default function PatientsPage() {
     if (!form.name || !form.phone) return alert("Vui lòng điền đủ Tên và SĐT!");
 
     try {
-      const payload = { name: form.name, phone: form.phone, birthDate: form.birthDate, gender: form.gender, address: form.address };
+      const payload = { 
+        name: form.name, 
+        phone: form.phone, 
+        birthDate: form.birthDate, 
+        gender: form.gender, 
+        address: form.address 
+      };
       
       if (isEditing && form.id) {
         await api.patch(`/patients/${form.id}`, payload);
@@ -51,12 +56,26 @@ export default function PatientsPage() {
       setIsEditing(false);
       fetchData();
     } catch (err: any) { 
-      alert("Lỗi lưu dữ liệu!"); 
+      console.error("--- CHI TIẾT LỖI TẠI DÒNG 50 ---");
+      console.error("Error Response Data:", err.response?.data);
+      console.error("Error Status:", err.response?.status);
+      console.error("Full Error Object:", err);
+      // XỬ LÝ LỖI CHI TIẾT TỪ BACKEND
+      const errorMessage = err.response?.data?.message || "Lỗi lưu dữ liệu!";
+      const finalMessage = Array.isArray(errorMessage) ? errorMessage[0] : errorMessage;
+      alert(finalMessage);
     }
   };
 
   const startEdit = (p: any) => {
-    setForm({ id: p.id, name: p.name, phone: p.phone, birthDate: p.birthDate?.split('T')[0] || '', gender: p.gender || 'Nam', address: p.address || '' });
+    setForm({ 
+      id: p.id, 
+      name: p.name, 
+      phone: p.phone, 
+      birthDate: p.birthDate?.split('T')[0] || '', 
+      gender: p.gender || 'Nam', 
+      address: p.address || '' 
+    });
     setIsEditing(true);
   };
 

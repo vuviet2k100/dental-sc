@@ -21,6 +21,7 @@ import { MedicalRecordController } from './medical-record.controller';
         },
       }),
     }),
+    
   ],
   controllers: [MedicalRecordController],
   providers: [MedicalRecordService],

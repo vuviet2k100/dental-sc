@@ -13,11 +13,16 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     JwtModule.registerAsync({
       imports: [ConfigModule], // Phải là 'imports' (số nhiều)
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1d' },
+      
+      useFactory: async (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        console.log('--- SECRET TRONG JWT MODULE ---', secret); // KIỂM TRA LOG NÀY
+        return {
+          secret: 'my-secret-key-123',
+          signOptions: { expiresIn: '1d' },
+        };
+      },
       }),
-    }),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
