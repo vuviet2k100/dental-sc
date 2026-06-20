@@ -26,8 +26,7 @@ async function bootstrap() {
 
   // Cấu hình CORS
   app.enableCors({
-    origin: true, // Cho phép mọi origin để test, sau đó bạn có thể siết lại
-    credentials: true,
+    origin: process.env.ALLOWED_ORIGIN || 'https://dental-sc.vercel.app',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type,Authorization',
   });
