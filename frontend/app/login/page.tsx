@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '@/services/api';
+import { api } from '@/app/lib/axios';
 import Link from 'next/link';
 
 export default function LoginPage() {

@@ -1,31 +1,20 @@
-import { ExtractJwt, Strategy } from 'passport-jwt';
+// src/auth/strategies/jwt.strategy.ts
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ExtractJwt, Strategy } from 'passport-jwt';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private configService: ConfigService) {
-   
-    const secret = configService.get<string>('JWT_SECRET');
-    console.log('--- SECRET TRONG JWT STRATEGY ---', secret); // KIỂM TRA LOG NÀY
-    
-    if (!secret) {
-      throw new InternalServerErrorException('Missing JWT_SECRET in environment variables');
-    }
+  constructor() {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: 'my-secret-key-123', // Bây giờ 'secret' chắc chắn là string
+      secretOrKey: 'my_super_secret_key_123',
     });
   }
 
+  // Phương thức này bắt buộc phải trả về user nếu xác thực thành công
   async validate(payload: any) {
-    console.log('--- JWT Strategy Validate Payload ---', payload);
-  if (!payload.sub) {
-     console.error('Payload thiếu sub!');
-     return null; // Trả về null để Guard báo 401
-  } 
     return { id: payload.sub, email: payload.email, role: payload.role };
   }
 }

@@ -27,14 +27,14 @@ export class AuthService {
 
   const payload = { sub: user.id, email: user.email, role: user.role };
   
+  // ÉP BUỘC CỨNG SECRET TẠI ĐÂY - CHỈ CẦN KHỚP VỚI STRATEGY LÀ XONG
+  const token = this.jwtService.sign(payload, { 
+    secret: 'my_super_secret_key_123' 
+  });
+
   return {
-    access_token: this.jwtService.sign(payload),
-    user: { // THÊM CỤC NÀY VÀO
-      id: user.id,
-      role: user.role,
-      name: user.name,
-      email: user.email
-    }
+    access_token: token,
+    user: { id: user.id, role: user.role, name: user.name, email: user.email }
   };
 }
 

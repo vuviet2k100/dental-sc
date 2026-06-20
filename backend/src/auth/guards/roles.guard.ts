@@ -36,11 +36,9 @@ export class RolesGuard implements CanActivate {
     const hasRole = requiredRoles.some((role) => String(role).toUpperCase() === userRoleStr);
 
     if (!hasRole) {
-      console.log(`❌ Bị chặn! User role: ${userRoleStr}, Cần một trong các quyền: ${requiredRoles.join(', ')}`);
-    } else {
-      console.log(`✅ Truy cập thành công với quyền: ${userRoleStr}`);
-    }
-
+      console.log(`❌ Bị chặn! User role: ${userRoleStr}, Cần: ${requiredRoles.join(', ')}`);
+      return false;
+    } 
     return hasRole;
   }
 }

@@ -78,7 +78,7 @@ export default function RecordDetail() {
         <h1 className="text-2xl font-bold flex items-center gap-2"><FileText /> Bệnh án #{id}</h1>
         
         <MedicalRecordForm 
-          initialData={{ diagnosis: record.diagnosis, treatment: record.treatment, consultation: record.consultation }}
+          initialData={{ diagnosis: record.diagnosis, treatment: record.treatment, note: record.note }}
           onSubmit={handleUpdate}
           loading={isUpdating}
           isStaff={isStaff}

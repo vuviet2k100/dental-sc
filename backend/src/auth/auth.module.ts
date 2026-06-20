@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config'; // Import đầy đủ
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
@@ -9,23 +9,19 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 @Module({
   imports: [
     PrismaModule,
-    // Cấu hình JwtModule bất đồng bộ để lấy secret từ file .env
     JwtModule.registerAsync({
-      imports: [ConfigModule], // Phải là 'imports' (số nhiều)
+      imports: [ConfigModule],
       inject: [ConfigService],
-      
       useFactory: async (configService: ConfigService) => {
         const secret = configService.get<string>('JWT_SECRET');
-        console.log('--- SECRET TRONG JWT MODULE ---', secret); // KIỂM TRA LOG NÀY
         return {
-          secret: 'my-secret-key-123',
-          signOptions: { expiresIn: '1d' },
+secret: 'my_super_secret_key_123', // Phải khớp 100%          signOptions: { expiresIn: '1d' },
         };
       },
-      }),
+    }),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
-  exports: [AuthService], // Export nếu các module khác cần gọi AuthService
+  exports: [AuthService],
 })
 export class AuthModule {}

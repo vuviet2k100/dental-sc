@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException, ExecutionContext } from '@nestjs/com
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import { Request } from 'express'; // Import kiểu Request
+import { Request } from 'express';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -11,15 +11,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   canActivate(context: ExecutionContext) {
-    // Trích xuất request từ context
     const request = context.switchToHttp().getRequest<Request>();
 
-    // 1. Luôn cho phép OPTIONS (CORS Preflight)
     if (request.method === 'OPTIONS') {
       return true;
     }
 
-    // 2. Kiểm tra xem route có được gắn decorator @Public() không
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -29,17 +26,16 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       return true;
     }
 
-    // 3. Nếu không public, thực hiện kiểm tra JWT của AuthGuard
     return super.canActivate(context);
   }
 
-  handleRequest(err: any, user: any, info: any, context: any) {
-    if (err || !user) {
-      console.log('--- AuthGuard từ chối ---');
-      console.log('Lỗi (err):', err);
-      console.log('Thông tin (info):', info); // Cái này quan trọng nhất
-      throw err || new UnauthorizedException();
-    }
-    return user;
+  handleRequest(err: any, user: any, info: any) {
+  if (info) {
+    console.log("DEBUG - Lỗi xác thực JWT:", info.message);
   }
+  if (err || !user) {
+    throw err || new UnauthorizedException();
+  }
+  return user;
+}
 }

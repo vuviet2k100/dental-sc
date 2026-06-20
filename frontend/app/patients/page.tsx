@@ -42,7 +42,7 @@ export default function PatientsPage() {
         name: form.name, 
         phone: form.phone, 
         birthDate: form.birthDate, 
-        gender: form.gender, 
+        gender: form.gender === 'Nam' ? 'MALE' : 'FEMALE', 
         address: form.address 
       };
       
@@ -111,7 +111,7 @@ export default function PatientsPage() {
               <input type="date" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} />
               <input className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Địa chỉ" value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
               <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-white" value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}>
-                <option value="Nam">Nam</option><option value="Nữ">Nữ</option>
+                <option value="MALE">Nam</option><option value="FEMALE">Nữ</option>
               </select>
               <button className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition">
                 {isEditing ? "Lưu cập nhật" : "Lưu bệnh nhân"}

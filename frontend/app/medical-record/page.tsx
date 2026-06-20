@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { api } from '@/services/api';
+import { api } from '@/app/lib/axios';
 import Link from 'next/link';
 import { Trash2, Loader2 } from 'lucide-react';
 

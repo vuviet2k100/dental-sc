@@ -1,31 +1,4 @@
-import axios from 'axios';
-
-// Gán cứng 100% - Không dùng process.env
-const API_URL = 'https://dental-sc.onrender.com/api'; 
-
-export const api = axios.create({ 
-  baseURL: API_URL, 
-  withCredentials: true,
-});
-
-api.interceptors.request.use((config) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401 && typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-      localStorage.clear();
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+import { api } from '@/app/lib/axios';
 
 // --- CÁC SERVICE (Phải có từ khóa export) ---
 

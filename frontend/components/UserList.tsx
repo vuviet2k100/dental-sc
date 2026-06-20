@@ -1,5 +1,5 @@
 'use client';
-import { api } from '@/services/api';
+import { api } from '@/app/lib/axios';
 import { useEffect, useState } from 'react';
 
 export default function UserList({ role, onSelect }: { role: 'DOCTOR' | 'STAFF', onSelect: (u: any) => void }) {

@@ -15,12 +15,16 @@ export default function DataTable({ data, columns }: { data: any[], columns: Col
           </tr>
         </thead>
         <tbody className="divide-y">
-          {data.map((row, i) => (
-            <tr key={i} className="hover:bg-slate-50">
-              {columns.map((col, j) => <td key={j} className="p-4">{row[col.accessor]}</td>)}
-            </tr>
-          ))}
-        </tbody>
+  {data.map((row) => (
+    <tr key={row.id || row.key_id} className="hover:bg-slate-50">
+      {columns.map((col) => (
+        <td key={`${row.id}-${col.accessor}`} className="p-4">
+          {row[col.accessor]}
+        </td>
+      ))}
+    </tr>
+  ))}
+</tbody>
       </table>
     </div>
   );

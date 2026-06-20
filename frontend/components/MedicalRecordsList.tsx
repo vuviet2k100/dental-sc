@@ -1,47 +1,85 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { api } from '@/services/api'; // Sử dụng instance api của bạn
+import { api } from '@/app/lib/axios';
 import Link from 'next/link';
+import { Loader2, FileText, AlertCircle } from 'lucide-react';
 
 export default function MedicalRecordsList({ patientId }: { patientId: string }) {
   const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchRecords = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        // Gọi API danh sách (Giờ đã được mở quyền cho STAFF ở Backend)
-        const res = await api.get(`/medical-record`);
-        const filtered = res.data.filter((r: any) => r.patientId.toString() === patientId);
-        setRecords(filtered);
+        // Tối ưu: Lọc trực tiếp từ Backend thay vì lấy toàn bộ
+        // Giả định backend hỗ trợ query: /medical-record?patientId=...
+        const res = await api.get(`/medical-record`, { params: { patientId } });
+        setRecords(res.data);
       } catch (err: any) {
-        // Xử lý lỗi tinh tế: chỉ hiện lỗi nếu không phải là 403
         if (err.response?.status === 403) {
           setError("Bạn không có quyền xem bệnh án.");
         } else {
-          setError("Không thể tải dữ liệu bệnh án.");
+          setError("Không thể tải dữ liệu bệnh án. Vui lòng thử lại sau.");
         }
+      } finally {
+        setLoading(false);
       }
     };
-    if (patientId) fetchRecords();
+
+    if (patientId) {
+      fetchRecords();
+    } else {
+      setLoading(false);
+    }
   }, [patientId]);
 
-  if (error) return <p className="text-red-500 text-sm">{error}</p>;
+  if (loading) {
+    return (
+      <div className="flex justify-center p-8">
+        <Loader2 className="animate-spin text-blue-600" size={32} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 text-red-600 rounded-xl flex items-center gap-2 border border-red-100">
+        <AlertCircle size={20} />
+        <p className="text-sm">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       {records.length > 0 ? (
         records.map((r: any) => (
-          <div key={r.id} className="p-4 border rounded-lg shadow-sm bg-white">
-            <h4 className="font-bold text-lg text-gray-800">{r.diagnosis}</h4>
-            <p className="text-gray-600 text-sm mt-1">Điều trị: {r.treatment}</p>
-            <Link href={`/medical-record/${r.id}`} className="text-blue-600 text-sm font-semibold mt-2 inline-block">
-              → Xem chi tiết
-            </Link>
+          <div key={r.id} className="p-5 border rounded-2xl shadow-sm bg-white hover:shadow-md transition duration-200">
+            <div className="flex items-start gap-3">
+              <FileText className="text-blue-500 mt-1" size={20} />
+              <div>
+                <h4 className="font-bold text-gray-900 text-lg">{r.diagnosis}</h4>
+                <p className="text-gray-600 text-sm mt-1 line-clamp-2">
+                  <span className="font-medium text-gray-800">Điều trị: </span>
+                  {r.treatment}
+                </p>
+                <Link 
+                  href={`/medical-record/${r.id}`} 
+                  className="text-blue-600 text-sm font-semibold mt-3 inline-flex items-center hover:underline"
+                >
+                  Xem chi tiết →
+                </Link>
+              </div>
+            </div>
           </div>
         ))
       ) : (
-        <p className="text-gray-500 italic">Bệnh nhân này chưa có bệnh án nào.</p>
+        <div className="text-center p-8 bg-slate-50 rounded-2xl border border-dashed">
+          <p className="text-gray-500">Bệnh nhân này chưa có hồ sơ bệnh án nào.</p>
+        </div>
       )}
     </div>
   );

@@ -4,7 +4,7 @@ import {
   Req, BadRequestException, Query, InternalServerErrorException
 } from '@nestjs/common';
 import { MedicalRecordService } from './medical-record.service';
-import { CreateMedicalRecordDto } from './dto/create-medical-record.dto';
+import { NewRecordDto } from './dto/new-record.dto';
 import { UpdateMedicalRecordDto } from './dto/update-medical-record.dto';
 import { Roles } from '../auth/decorators/role.decorator';
 import { Role } from '@prisma/client';
@@ -19,10 +19,12 @@ export class MedicalRecordController {
 
   @Post()
   @Roles(Role.ADMIN, Role.DOCTOR)
-  create(@Body() dto: CreateMedicalRecordDto, @Req() req: any) {
-    const doctorId = req.user.id;
-    return this.medicalRecordService.create({ ...dto, doctorId });
-  }
+  async create(@Body() dto: NewRecordDto, @Req() req: any) {
+  console.log(">>> NestJS nhận được:", Object.keys(dto));
+    const doctorId = Number(req.user.id);
+  return this.medicalRecordService.create({ 
+    ...dto, doctorId });
+}
 
   @Get()
   @Roles(Role.ADMIN, Role.DOCTOR, Role.STAFF)
