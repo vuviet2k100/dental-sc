@@ -1,2 +1,8 @@
-# Đảm bảo file .prisma luôn giữ định dạng LF
+# Đảm bảo mọi file text đều dùng LF (Linux-style) - Rất quan trọng cho Render/Vercel
+* text=auto eol=lf
+
+# Ép buộc các file cấu hình quan trọng luôn là LF
 *.prisma text eol=lf
+*.ts text eol=lf
+*.js text eol=lf
+*.json text eol=lf
