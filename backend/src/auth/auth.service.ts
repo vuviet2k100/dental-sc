@@ -29,7 +29,7 @@ export class AuthService {
   
   // ÉP BUỘC CỨNG SECRET TẠI ĐÂY - CHỈ CẦN KHỚP VỚI STRATEGY LÀ XONG
   const token = this.jwtService.sign(payload, { 
-    secret: 'my_super_secret_key_123' 
+    secret: process.env.JWT_SECRET || 'my_super_secret_key_123'
   });
 
   return {

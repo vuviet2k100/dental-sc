@@ -11,14 +11,14 @@ async function bootstrap() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-  app.enableCors({
-    origin: [
-    'https://dental-sc.vercel.app', 
-    'http://localhost:3000', 
-    'http://localhost:3001'
-  ],
+  const allowedOrigins = process.env.ALLOWED_ORIGIN 
+  ? process.env.ALLOWED_ORIGIN.split(',') 
+  : ['https://dental-sc.vercel.app', 'http://localhost:3000', 'http://localhost:3001'];
+
+app.enableCors({
+  origin: allowedOrigins,
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-  credentials: true, // THÊM DÒNG NÀY VÀO
+  credentials: true,
   allowedHeaders: 'Content-Type,Authorization',
 });
 
