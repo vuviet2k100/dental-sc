@@ -15,7 +15,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       useFactory: async (configService: ConfigService) => {
         const secret = configService.get<string>('JWT_SECRET');
         return {
-secret: 'my_super_secret_key_123', // Phải khớp 100%          signOptions: { expiresIn: '1d' },
+        secret: 'my_super_secret_key_123', // Phải khớp 100%          signOptions: { expiresIn: '1d' },
         };
       },
     }),

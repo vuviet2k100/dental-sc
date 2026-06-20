@@ -11,6 +11,8 @@ async function bootstrap() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+  app.setGlobalPrefix('api');
+
   //Cấu hình ValidationPipe
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
@@ -21,7 +23,6 @@ async function bootstrap() {
     return new BadRequestException(errors);
   }  }));
 
-  app.setGlobalPrefix('api');
 
   // Cấu hình CORS
   app.enableCors({
@@ -33,6 +34,23 @@ async function bootstrap() {
 
   const port = process.env.PORT || 4000;
   await app.listen(port, '0.0.0.0');
+
+
+// Trong main.ts, trước app.listen
+const server = app.getHttpServer();
+const router = (server as any)._events.request._router;
+
+// Định nghĩa kiểu rõ ràng để TypeScript không phàn nàn
+const availableRoutes: string[] = router.stack
+  .map((layer: any) => layer.route?.path)
+  .filter((path: string | undefined): path is string => path !== undefined);
+
+console.log(">>> Danh sách các route đã đăng ký:", availableRoutes);
+
+const url = await app.getUrl();
+  console.log(`🚀 Ứng dụng đang chạy tại: ${url}`);
+  console.log(`📋 Global Prefix là: /api`);
+
 }
 console.log(">>> Đang chạy tại thư mục:", __dirname);
 bootstrap();
