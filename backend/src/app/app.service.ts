@@ -7,12 +7,12 @@ export class AppService {
 
   async getDashboardStats() {
     // Đếm song song tất cả các bảng trong Database
-    const [totalPatients, totalAppointments, totalRecords, waitingAppointments] = await Promise.all([
+    const [totalPatients, totalAppointments, totalRecords, scheduledAppointments] = await Promise.all([
       this.prisma.patient.count(),
       this.prisma.appointment.count(),
       this.prisma.medicalRecord.count(),
       this.prisma.appointment.count({
-        where: { status: 'WAITING' } // Đếm xem có bao nhiêu ca đang chờ duyệt
+        where: { status: 'SCHEDULED' } // Đếm xem có bao nhiêu ca đang chờ duyệt
       })
     ]);
 
@@ -20,7 +20,7 @@ export class AppService {
       totalPatients,
       totalAppointments,
       totalRecords,
-      waitingAppointments,
+      scheduledAppointments,
       serverTime: new Date()
     };
   }

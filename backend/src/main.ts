@@ -3,8 +3,10 @@ import { AppModule } from './app/app.module';
 import { ValidationPipe, Logger, BadRequestException } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as express from 'express'; // Import chuẩn từ express
+import 'dotenv/config'; // Thêm dòng này vào đầu file
 
 async function bootstrap() {
+  console.log(">>> DATABASE_URL đang dùng:", process.env.DATABASE_URL ? "ĐÃ CÓ" : "CHƯA CÓ");
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   
   // SỬA Ở ĐÂY: Dùng app.use để áp dụng middleware limit một cách chính xác

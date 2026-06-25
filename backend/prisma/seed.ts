@@ -1,74 +1,69 @@
-import { Client } from 'pg';
+import { PrismaClient, Role, Gender, AppointmentStatus, ServiceType, AppointmentSource } from '@prisma/client';
+import { Pool } from 'pg'; 
+import { PrismaPg } from '@prisma/adapter-pg';
 import * as bcrypt from 'bcrypt';
-import * as dotenv from 'dotenv';
-import * as path from 'path';
 
-dotenv.config({ path: path.join(__dirname, '../.env') });
-
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  console.error("❌ LỖI: DATABASE_URL không tồn tại!");
-  process.exit(1);
-}
+const connectionString = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_Xb3R6mwZGMhd@ep-red-hall-ao0lpe5f-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require";
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter } as any);
 
 async function main() {
-  const client = new Client({ 
-    connectionString,
-    ssl: { rejectUnauthorized: false }
-  });
-  
-  await client.connect();
+  console.log('🔄 Đang bắt đầu nạp dữ liệu mẫu theo Schema mới...');
 
   try {
-    console.log('🔄 Đang làm sạch và khởi tạo lại dữ liệu...');
-    await client.query('TRUNCATE TABLE "TreatmentImage", "MedicalRecord", "Appointments", "Patient", "Users" RESTART IDENTITY CASCADE;');
+    // 1. Xóa dữ liệu (Đúng thứ tự để không vi phạm khóa ngoại)
+    await prisma.treatmentImage.deleteMany();
+    await prisma.medicalRecord.deleteMany();
+    await prisma.appointment.deleteMany();
+    await prisma.patient.deleteMany();
+    await prisma.user.deleteMany();
 
-    // 1. Tạo Users
     const hashedPassword = await bcrypt.hash('pass123', 10);
-    const userRes = await client.query(`
-      INSERT INTO "Users" (name, email, password, role, "createdAt") 
-      VALUES 
-      ($1, $2, $3, 'ADMIN', NOW()),
-      ($4, $5, $3, 'DOCTOR', NOW()),
-      ($6, $7, $3, 'STAFF', NOW())
-      RETURNING id, name, role;
-    `, [
-      'Quản trị viên', 'admin@smilecraft.com', hashedPassword,
-      'BS. Bác Văn Sĩ', 'dr.bsi@smilecraft.com',
-      'NV. Nhân Thị Viên', 'st.nvien@smilecraft.com'
-    ]);
 
-    const doctor = userRes.rows.find(u => u.role === 'DOCTOR');
-    const staff = userRes.rows.find(u => u.role === 'STAFF');
+    // 2. Tạo Users (Admin, Doctor, Staff)
+    const admin = await prisma.user.create({
+      data: { name: 'Quản Trị Viên', email: 'admin@dental.com', password: hashedPassword, role: Role.ADMIN },
+    });
+    const doctor = await prisma.user.create({
+      data: { name: 'BS. Bác Văn Sĩ', email: 'dr.bsi@smilecraft.com', password: hashedPassword, role: Role.DOCTOR },
+    });
+    const staff = await prisma.user.create({
+      data: { name: 'NV. Nhân Thị Viên', email: 'st.nvien@smilecraft.com', password: hashedPassword, role: Role.STAFF },
+    });
 
-    // 2. Tạo Patients
-    const patientRes = await client.query(`
-      INSERT INTO "Patient" (name, phone, gender, "createdAt", "updatedAt") 
-      VALUES 
-      ('Lê Hoàng Long', '0912345678', 'MALE', NOW(), NOW()),
-      ('Phạm Thanh Thảo', '0987654321', 'FEMALE', NOW(), NOW())
-      RETURNING id;
-    `);
+    // 3. Tạo Patient
+    const p1 = await prisma.patient.create({
+      data: { name: 'Lê Hoàng Long', phone: '0912345678', gender: Gender.MALE },
+    });
 
-    // 3. Tạo Appointments (Có xử lý staffId)
-    if (patientRes.rows.length >= 2) {
-      await client.query(`
-        INSERT INTO "Appointments" ("appointmentTime", note, status, "patientId", "doctorId", "staffId", "createdAt") 
-        VALUES 
-        (NOW() + INTERVAL '5 days', 'Khám răng định kỳ', 'WAITING', $1, $2, $3, NOW()),
-        (NOW() + INTERVAL '6 days', 'Tư vấn niềng răng', 'WAITING', $4, $2, $3, NOW());
-      `, [
-        patientRes.rows[0].id, doctor.id, staff.id,
-        patientRes.rows[1].id, doctor.id, staff.id
-      ]);
-      console.log('✅ Dữ liệu mẫu đã được nạp thành công (Bao gồm Bác sĩ & Nhân viên)');
-    }
+    // 4. Tạo Appointment (Đầy đủ các trường nghiệp vụ mới)
+    await prisma.appointment.create({
+      data: {
+        appointmentTime: new Date(),
+        status: AppointmentStatus.SCHEDULED,
+        note: 'Khách yêu cầu tư vấn niềng răng',
+        
+        // Trường mới
+        service: ServiceType.IMP,
+        source: AppointmentSource.ADS,
+        teleName: 'Sale Nguyễn Văn A',
+        teleNote: 'Khách quan tâm gói trả góp',
+        saleNote: 'Đang đợi chốt sale',
+        revenue: 0,
+        
+        patientId: p1.id,
+        doctorId: doctor.id,
+        staffId: staff.id,
+      },
+    });
 
+    console.log('✅ Nạp dữ liệu thành công với cấu trúc Schema mới!');
   } catch (error) {
     console.error('❌ Lỗi nạp dữ liệu:', error);
   } finally {
-    await client.end();
+    await prisma.$disconnect();
+    await pool.end();
   }
 }
 

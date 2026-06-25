@@ -6,7 +6,6 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-
 enum Role {
   ADMIN
   DOCTOR
@@ -14,44 +13,69 @@ enum Role {
   PATIENT
 }
 
-enum AppointmentStatus {
-  WAITING
-  IN_PROGRESS
-  DONE
-  CANCELLED
+enum Department {
+  TELE_SALE
+  RECEPTION
+  ACCOUNTING
 }
 
-// Bổ sung Enum Gender
 enum Gender {
   MALE
   FEMALE
   OTHER
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String?  @unique
-  password  String
-  role      Role     @default(PATIENT)
-  createdAt DateTime @default(now())
+enum AppointmentStatus {
+  SCHEDULED
+  DEPOSITED
+  DONE
+  CANCELLED
+  FAILED
+}
 
-  appointments      Appointment[]
-  medicalRecords    MedicalRecord[]
-  staffAppointments Appointment[]   @relation("StaffAppointments")
+enum AppointmentSource {
+  ADS
+  SEEDING
+  WALKIN
+  REFERRAL
+  OTHER
+}
+
+enum ServiceType {
+  IMP
+  WISDOM_TOOTH
+  CERAMIC
+  CLEANING
+  OTHER
+}
+
+// --- MODELS ---
+
+model User {
+  id         Int        @id @default(autoincrement())
+  name       String
+  email      String?    @unique
+  password   String
+  role       Role       @default(PATIENT)
+  department Department @default(TELE_SALE) // Phân loại nhóm làm việc
+  createdAt  DateTime   @default(now())
+
+  appointments        Appointment[]
+  medicalRecords      MedicalRecord[]
+  staffAppointments   Appointment[]   @relation("StaffAppointments")
 
   @@map("Users")
 }
 
 model Patient {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   name      String
-  phone     String    @unique
-  gender    Gender?   // Sử dụng Enum Gender
+  phone     String   @unique
+  gender    Gender?
   birthDate DateTime?
   address   String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   appointments   Appointment[]
   medicalRecords MedicalRecord[]
@@ -61,32 +85,45 @@ model Appointment {
   id              Int               @id @default(autoincrement())
   appointmentTime DateTime
   note            String?
-  status          AppointmentStatus @default(WAITING)
+  status          AppointmentStatus @default(SCHEDULED)
   createdAt       DateTime          @default(now())
 
-  patientId Int
-  doctorId  Int
-  staffId   Int?
-
-  patient       Patient        @relation(fields: [patientId], references: [id])
-  doctor        User           @relation(fields: [doctorId], references: [id])
-  staff         User?          @relation("StaffAppointments", fields: [staffId], references: [id])
-  medicalRecord MedicalRecord? // Quan hệ 1-1 với MedicalRecord
+  // Chi tiết nghiệp vụ
+  service         ServiceType       @default(OTHER)
+  source          AppointmentSource @default(OTHER)
+  
+  // Thông tin tư vấn & Tài chính
+  teleName        String?           // Tên nhân viên Tele (nếu cần ghi tự do)
+  teleNote        String?           // Ghi chú của Tele
+  saleNote        String?           // Ghi chú kết quả tư vấn
+  revenue         Decimal?          @default(0) @db.Decimal(12, 2)
+  
+  // Quan hệ
+  patientId       Int
+  patient         Patient           @relation(fields: [patientId], references: [id])
+  
+  doctorId        Int
+  doctor          User              @relation(fields: [doctorId], references: [id])
+  
+  staffId         Int?              // Nhân viên phụ trách (Tele/Lễ tân)
+  staff           User?             @relation("StaffAppointments", fields: [staffId], references: [id])
+  
+  medicalRecord   MedicalRecord?
 
   @@map("Appointments")
 }
 
 model MedicalRecord {
-  id        Int      @id @default(autoincrement())
-  diagnosis String
-  treatment String
-  note      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  diagnosis     String
+  treatment     String
+  note          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   patientId     Int
   doctorId      Int
-  appointmentId Int @unique // Ràng buộc 1-1 với Appointment
+  appointmentId Int @unique
 
   patient     Patient        @relation(fields: [patientId], references: [id])
   doctor      User           @relation(fields: [doctorId], references: [id])

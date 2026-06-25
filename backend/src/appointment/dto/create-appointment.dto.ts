@@ -1,18 +1,39 @@
-import { IsNotEmpty, IsOptional, IsString, IsNumber } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsEnum, IsDateString } from 'class-validator';
+import { AppointmentStatus, ServiceType, AppointmentSource } from '@prisma/client';
 
 export class CreateAppointmentDto {
-  @IsNotEmpty()
-  appointmentTime!: string; // Nhận chuỗi ISO từ datetime-local
+  @IsNumber()
+  patientId?: number;
 
-  @IsOptional()
+  @IsNumber()
+  doctorId?: number;
+
+  @IsDateString()
+  appointmentTime!: string;
+
+  @IsEnum(ServiceType)
+  service?: ServiceType;
+
+  @IsEnum(AppointmentSource)
+  source?: AppointmentSource;
+
   @IsString()
+  @IsOptional()
   note?: string;
 
-  @IsNotEmpty()
-  @IsNumber()
-  patientId!: number;
+  @IsString()
+  @IsOptional()
+  teleName?: string;
 
-  @IsNotEmpty()
+  @IsString()
+  @IsOptional()
+  teleNote?: string;
+
+  @IsString()
+  @IsOptional()
+  saleNote?: string;
+
   @IsNumber()
-  doctorId!: number;
+  @IsOptional()
+  revenue?: number;
 }
