@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { PatientService } from './patient.service';
-import { Role } from '@/auth/enums/role.enum';
+import { Role } from '@common/enum';
 import { Roles } from '@/auth/decorators/role.decorator';
 import { RolesGuard } from '@/auth/guards/roles.guard';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';

@@ -53,8 +53,21 @@ export class AuthService {
   private async registerUser(dto: any, role: Role, type: string) {
     const userExists = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (userExists) throw new BadRequestException('Email đã tồn tại!');
+
     const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const user = await this.prisma.user.create({ data: { ...dto, password: hashedPassword, role } });
+
+    // Xây dựng object dữ liệu rõ ràng
+    const userData: any = {
+      email: dto.email,
+      password: hashedPassword,
+      role: role,
+      name: dto.name,
+      // Nếu là STAFF thì lấy department từ dto, nếu là DOCTOR thì để null
+      department: role === Role.STAFF ? dto.department : null,
+    };
+
+    const user = await this.prisma.user.create({ data: userData });
+    
     return { message: `${type} được tạo thành công`, userId: user.id };
   }
   async changePassword(userId: number, body: any) {

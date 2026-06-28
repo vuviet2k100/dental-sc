@@ -1,7 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { api } from '@/app/lib/axios'; // Import instance api đã cấu hình
+import { api } from '@/app/lib/axios';
 import { useRouter } from 'next/navigation';
+// Đảm bảo đường dẫn import này đúng với cấu trúc project của bạn
+import { DepartmentLabels } from '@common/enum'; 
 
 export default function Register() {
   const router = useRouter();
@@ -9,23 +11,32 @@ export default function Register() {
     name: '',
     email: '',
     password: '',
-    role: 'DOCTOR' 
+    role: 'DOCTOR', // Mặc định là DOCTOR
+    department: 'TELE_SALE' // Giá trị mặc định nếu là STAFF
   });
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    // 1. Endpoint sẽ được ghép với baseURL trong api instance
+    setLoading(true);
+
+    // Xử lý dữ liệu trước khi gửi:
+    // Nếu là DOCTOR thì không gửi department (hoặc gửi null)
+    // Nếu là STAFF thì gửi kèm department
+    const payload = {
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      role: formData.role,
+      ...(formData.role === 'STAFF' ? { department: formData.department } : {})
+    };
+
     const endpoint = formData.role === 'DOCTOR' ? '/auth/register/doctor' : '/auth/register/staff';
 
-    setLoading(true);
     try {
-      // 2. Không cần headers thủ công, 'api' đã tự xử lý Authorization header
-      await api.post(endpoint, formData);
-      
+      await api.post(endpoint, payload);
       alert('Đăng ký tài khoản thành công!');
       router.push('/dashboard');
     } catch (error: any) {
-      // 3. Xử lý lỗi (ví dụ: 401 khi hết hạn token Admin)
       if (error.response?.status === 401) {
         alert('Phiên làm việc hết hạn, vui lòng đăng nhập lại.');
         router.push('/login');
@@ -64,6 +75,7 @@ export default function Register() {
             onChange={(e) => setFormData({...formData, password: e.target.value})} 
           />
 
+          {/* Chọn Vai trò */}
           <div className="p-3 border border-gray-300 rounded-lg">
             <label className="block text-sm text-gray-600 mb-2">Vai trò:</label>
             <select 
@@ -75,6 +87,24 @@ export default function Register() {
               <option value="STAFF">Nhân viên (Staff)</option>
             </select>
           </div>
+
+          {/* Chọn Phòng ban (Chỉ hiện khi là STAFF) */}
+          {formData.role === 'STAFF' && (
+            <div className="p-3 border border-gray-300 rounded-lg">
+              <label className="block text-sm text-gray-600 mb-2">Phòng ban:</label>
+              <select 
+                className="w-full outline-none bg-transparent font-medium"
+                value={formData.department}
+                onChange={(e) => setFormData({...formData, department: e.target.value})}
+              >
+                {Object.entries(DepartmentLabels)
+                .filter(([key]) => key !== 'ACCOUNTING')
+                .map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <button 
             onClick={handleRegister} 

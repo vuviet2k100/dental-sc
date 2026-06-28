@@ -1,4 +1,5 @@
-import { IsString, IsEmail, IsNotEmpty, MinLength, IsOptional } from 'class-validator';
+import { IsString, IsEmail, IsNotEmpty, MinLength, IsOptional, IsEnum } from 'class-validator';
+import { Department } from '@prisma/client'; // Nhập Enum từ Prisma
 
 // --- DTO Đăng ký cho Bác sĩ ---
 export class RegisterDoctorDto {
@@ -15,15 +16,12 @@ export class RegisterDoctorDto {
   name!: string;
 
   @IsString()
-  role?: string; // Mặc định sẽ là 'DOCTOR' trong service, nhưng có thể thêm vào đây nếu muốn tùy chỉnh  
+  role?: string; 
   
-  // Thêm ! nếu cột này bắt buộc trong DB, hoặc đổi thành ? nếu cấu hình nullable
   @IsOptional()
-  //@IsNotEmpty({ message: 'Số điện thoại không được để trống' })
   phone!: string; 
 
   @IsOptional()
-  //@IsNotEmpty({ message: 'Chuyên khoa không được để trống' })
   specialty!: string;
 }
 
@@ -42,9 +40,13 @@ export class RegisterStaffDto {
   name!: string;
 
   @IsString()
-  role?: string; // Mặc định sẽ là 'STAFF' trong service, nhưng có thể thêm vào đây nếu muốn tùy chỉnh
+  role?: string;
 
   @IsOptional()
-  //@IsNotEmpty({ message: 'Vị trí công việc không được để trống' })
   position!: string; 
+
+  // Thêm field bắt buộc cho Staff
+  @IsEnum(Department, { message: 'Phòng ban không hợp lệ' })
+  @IsNotEmpty({ message: 'Vui lòng chọn phòng ban cho nhân viên' })
+  department!: Department;
 }

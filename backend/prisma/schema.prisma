@@ -26,6 +26,7 @@ enum Gender {
 }
 
 enum AppointmentStatus {
+  WAITING
   SCHEDULED
   DEPOSITED
   DONE
@@ -39,6 +40,12 @@ enum AppointmentSource {
   WALKIN
   REFERRAL
   OTHER
+}
+
+enum AppointmentType {
+  SCHEDULE_VISIT
+  PROCEDURE
+  FOLLOW_UP
 }
 
 enum ServiceType {
@@ -57,7 +64,7 @@ model User {
   email      String?    @unique
   password   String
   role       Role       @default(PATIENT)
-  department Department @default(TELE_SALE) // Phân loại nhóm làm việc
+  department Department? @default(TELE_SALE) // Phân loại nhóm làm việc
   createdAt  DateTime   @default(now())
 
   appointments        Appointment[]
@@ -91,7 +98,7 @@ model Appointment {
   // Chi tiết nghiệp vụ
   service         ServiceType       @default(OTHER)
   source          AppointmentSource @default(OTHER)
-  
+  type            AppointmentType   @default(SCHEDULE_VISIT)
   // Thông tin tư vấn & Tài chính
   teleName        String?           // Tên nhân viên Tele (nếu cần ghi tự do)
   teleNote        String?           // Ghi chú của Tele
