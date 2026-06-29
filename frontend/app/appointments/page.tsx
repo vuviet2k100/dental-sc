@@ -35,6 +35,8 @@ export default function AppointmentsPage() {
 
   const isAdmin = user?.role === 'ADMIN';
   const isDoctor = user?.department === 'DOCTOR';
+  console.log(">>> Role thực tế của user:", user.role); 
+  console.log(">>> Giá trị isDoctor đang tính toán:", isDoctor);
   const isReception = user?.department === 'RECEPTION';
   const isFollowUp = activeTab === AppointmentType.FOLLOW_UP; 
 
