@@ -83,9 +83,9 @@ export const SourceLabels: Record<AppointmentSource, string> = {
 };
 
 export const TypeLabels: Record<AppointmentType, string> = {
-  [AppointmentType.SCHEDULE_VISIT]: 'Tái khám',
-  [AppointmentType.PROCEDURE]: 'Thực hiện thủ thuật',
-  [AppointmentType.FOLLOW_UP]: 'Theo dõi sau điều trị',
+  [AppointmentType.SCHEDULE_VISIT]: 'Lịch hẹn',
+  [AppointmentType.PROCEDURE]: 'Lịch thực hiện',
+  [AppointmentType.FOLLOW_UP]: 'Tái khám',
 };
 
 export const ServiceLabels: Record<ServiceType, string> = {

@@ -27,8 +27,14 @@ export class AppointmentsController {
 
   @Get()
   @Roles(Role.ADMIN, Role.STAFF, Role.DOCTOR) 
-  async findAll(@Query('staffId') staffId?: string) {
-    return this.appointmentService.findAll(staffId ? parseInt(staffId) : undefined);
+  async findAll(
+    @Query('staffId') staffId?: string,
+    @Query('type') type?: string
+  ) {
+    return this.appointmentService.findAll(
+      staffId ? parseInt(staffId) : undefined,
+      type
+    );
   }
 
   @Get(':id')
@@ -39,9 +45,13 @@ export class AppointmentsController {
 
   @Patch(':id') 
   @Roles(Role.ADMIN, Role.STAFF)
-  update(@Param('id') id: string, @Body() data: any) {
+  update(
+    @Param('id') id: string, 
+    @Body() data: any,
+    @Req() req: any
+  ) {
     // Controller này sẽ gọi hàm update đã được xử lý an toàn trong Service
-    return this.appointmentService.update(+id, data); 
+    return this.appointmentService.update(+id, data, req.user); 
   }
 
   @Delete(':id')

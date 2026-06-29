@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { api } from '@/app/lib/axios';
+import { medicalRecordService } from '@/services/api'; // Import service mới
 import Link from 'next/link';
 import { Loader2, FileText, AlertCircle } from 'lucide-react';
 
@@ -14,15 +14,13 @@ export default function MedicalRecordsList({ patientId }: { patientId: string })
       setLoading(true);
       setError(null);
       try {
-        // Tối ưu: Lọc trực tiếp từ Backend thay vì lấy toàn bộ
-        // Giả định backend hỗ trợ query: /medical-record?patientId=...
-        const res = await api.get(`/medical-record`, { params: { patientId } });
+        const res = await medicalRecordService.getByPatient(patientId);
         setRecords(res.data);
       } catch (err: any) {
         if (err.response?.status === 403) {
           setError("Bạn không có quyền xem bệnh án.");
         } else {
-          setError("Không thể tải dữ liệu bệnh án. Vui lòng thử lại sau.");
+          setError("Không thể tải dữ liệu bệnh án.");
         }
       } finally {
         setLoading(false);

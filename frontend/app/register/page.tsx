@@ -1,9 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { api } from '@/app/lib/axios';
 import { useRouter } from 'next/navigation';
-// Đảm bảo đường dẫn import này đúng với cấu trúc project của bạn
-import { DepartmentLabels } from '@common/enum'; 
+import { authService } from '@/services/api'; // Import service mới
+import { DepartmentLabels } from '@common/enum';
+import Link from 'next/link';
 
 export default function Register() {
   const router = useRouter();
@@ -11,17 +11,15 @@ export default function Register() {
     name: '',
     email: '',
     password: '',
-    role: 'DOCTOR', // Mặc định là DOCTOR
-    department: 'TELE_SALE' // Giá trị mặc định nếu là STAFF
+    role: 'DOCTOR',
+    department: 'TELE_SALE'
   });
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
     setLoading(true);
 
-    // Xử lý dữ liệu trước khi gửi:
-    // Nếu là DOCTOR thì không gửi department (hoặc gửi null)
-    // Nếu là STAFF thì gửi kèm department
+    // Xử lý payload gọn gàng
     const payload = {
       name: formData.name,
       email: formData.email,
@@ -30,20 +28,13 @@ export default function Register() {
       ...(formData.role === 'STAFF' ? { department: formData.department } : {})
     };
 
-    const endpoint = formData.role === 'DOCTOR' ? '/auth/register/doctor' : '/auth/register/staff';
-
     try {
-      await api.post(endpoint, payload);
+      await authService.register(payload, formData.role);
       alert('Đăng ký tài khoản thành công!');
       router.push('/dashboard');
     } catch (error: any) {
-      if (error.response?.status === 401) {
-        alert('Phiên làm việc hết hạn, vui lòng đăng nhập lại.');
-        router.push('/login');
-      } else {
-        const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra, hãy kiểm tra lại thông tin.';
-        alert('Đăng ký thất bại: ' + errorMessage);
-      }
+      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra, hãy kiểm tra lại thông tin.';
+      alert('Đăng ký thất bại: ' + errorMessage);
     } finally {
       setLoading(false);
     }
@@ -75,7 +66,6 @@ export default function Register() {
             onChange={(e) => setFormData({...formData, password: e.target.value})} 
           />
 
-          {/* Chọn Vai trò */}
           <div className="p-3 border border-gray-300 rounded-lg">
             <label className="block text-sm text-gray-600 mb-2">Vai trò:</label>
             <select 
@@ -88,7 +78,6 @@ export default function Register() {
             </select>
           </div>
 
-          {/* Chọn Phòng ban (Chỉ hiện khi là STAFF) */}
           {formData.role === 'STAFF' && (
             <div className="p-3 border border-gray-300 rounded-lg">
               <label className="block text-sm text-gray-600 mb-2">Phòng ban:</label>

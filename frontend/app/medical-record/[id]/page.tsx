@@ -2,22 +2,24 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Trash2, Upload, FileText, Loader2, ArrowLeft, Trash } from 'lucide-react';
-import { api } from '@/app/lib/axios';
+import { medicalRecordService } from '@/services/api';
 import MedicalRecordForm from '@/components/MedicalRecordForm';
 
 export default function RecordDetail() {
-  const { id } = useParams();
+  const { id } = useParams() as { id: string };
   const router = useRouter();
   const [record, setRecord] = useState<any>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isStaff] = useState(() => typeof window !== 'undefined' && localStorage.getItem('user_role')?.trim().toUpperCase() === 'STAFF');
+  const [isStaff] = useState(() => 
+    typeof window !== 'undefined' && localStorage.getItem('user_role')?.trim().toUpperCase() === 'STAFF'
+  );
 
   useEffect(() => { if (id) fetchRecord(); }, [id]);
 
   const fetchRecord = async () => {
     try {
-      const res = await api.get(`/medical-record/${id}`);
+      const res = await medicalRecordService.getById(id);
       setRecord(res.data);
     } catch (err) { console.error(err); }
   };
@@ -25,7 +27,7 @@ export default function RecordDetail() {
   const handleUpdate = async (data: any) => {
     setIsUpdating(true);
     try {
-      await api.patch(`/medical-record/${id}`, data);
+      await medicalRecordService.update(id, data);
       alert('Cập nhật thành công!');
       fetchRecord();
     } catch (err) { alert('Cập nhật thất bại!'); } finally { setIsUpdating(false); }
@@ -34,7 +36,7 @@ export default function RecordDetail() {
   const handleDeleteRecord = async () => {
     if (!confirm('Bạn có chắc muốn xóa toàn bộ bệnh án này?')) return;
     try {
-      await api.delete(`/medical-record/${id}`);
+      await medicalRecordService.delete(id);
       router.back();
     } catch (err) { alert('Không thể xóa bệnh án!'); }
   };
@@ -46,7 +48,7 @@ export default function RecordDetail() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      await api.post(`/medical-record/upload/${id}`, formData);
+      await medicalRecordService.upload(id, formData);
       await fetchRecord();
     } catch (err) { alert('Upload lỗi!'); } finally { setIsUploading(false); }
   };
@@ -54,7 +56,7 @@ export default function RecordDetail() {
   const handleDeleteImage = async (imageId: number) => {
     if (!confirm('Xóa ảnh này?')) return;
     try {
-      await api.delete(`/medical-record/image/${imageId}`);
+      await medicalRecordService.deleteImage(imageId);
       await fetchRecord();
     } catch (err) { alert('Không thể xóa ảnh!'); }
   };

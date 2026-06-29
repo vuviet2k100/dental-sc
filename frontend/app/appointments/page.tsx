@@ -1,200 +1,442 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { staffService, userService } from '@/services/api';
 import { api } from '@/app/lib/axios';
+import { 
+ SourceLabels, StatusLabels, ServiceLabels, TypeLabels, AppointmentType, Department 
+} from '@common/enum';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AppointmentsPage() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
+
   const [data, setData] = useState<any>({ appointments: [], patients: [], doctors: [], staffs: [] });
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<any>({});
+  const [activeTab, setActiveTab] = useState<string>(AppointmentType.SCHEDULE_VISIT);
   
-  const [isOtherService, setIsOtherService] = useState(false);
-  const [isOtherSource, setIsOtherSource] = useState(false);
+  const [filters, setFilters] = useState({ date: '', status: '', name: '' });
+  const [patientSearch, setPatientSearch] = useState('');
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false);
 
-  const statusMap: any = { SCHEDULED: "Đặt lịch", DEPOSITED: "Đã cọc", DONE: "Đã làm dịch vụ", CANCELLED: "Đã hủy", FAILED: "Không đến" };
-  const serviceLabels: any = { CLEANING: "Tẩy trắng", IMP: "Implant", CERAMIC: "Răng sứ" };
-  const sourceLabels: any = { ADS: "Ads", SEEDING: "Seeding", WALKIN: "Vãng lai", REFERRAL: "Giới thiệu" };
+  useEffect(() => {
+    if (!isLoading && !user) router.push('/login');
+  }, [user, isLoading, router]);
 
-  const fetchData = async () => {
-    try {
-      const [app, p, d, s] = await Promise.all([
-        staffService.getAllAppointments(),
-        staffService.getAllPatients(),
-        userService.getAll('DOCTOR'),
-        userService.getAll('STAFF')
-      ]);
-      setData({ appointments: app.data || [], patients: p.data || [], doctors: d.data || [], staffs: s.data || [] });
-    } catch (e) { alert("Lỗi tải dữ liệu"); }
+  useEffect(() => {
+  setFilters({ date: '', status: '', name: '' });
+  setPatientSearch('');
+}, [activeTab]);
+
+  const isAdmin = user?.role === 'ADMIN';
+  const isDoctor = user?.department === 'DOCTOR';
+  const isReception = user?.department === 'RECEPTION';
+  const isFollowUp = activeTab === AppointmentType.FOLLOW_UP; 
+
+  const canEdit = useMemo(() => {
+  if (isAdmin) return true; // Admin luôn được sửa mọi thứ
+  
+  if (activeTab === AppointmentType.SCHEDULE_VISIT) {
+    return isReception; // Lịch hẹn: Lễ tân được sửa
+  }
+  if (activeTab === AppointmentType.PROCEDURE) {
+    return isDoctor || user.department === Department.TELE_SALE; // Lịch thực hiện: Bác sĩ + Tele được sửa
+  }
+  if (activeTab === AppointmentType.FOLLOW_UP) {
+    return isDoctor; // Tái khám: Bác sĩ được sửa
+  }
+  return false;
+}, [activeTab, user, isAdmin, isReception, isDoctor]);
+
+// Biến này để khóa các input trong Modal
+const isReadOnly = !canEdit;
+
+const fetchData = useCallback(async () => {
+  if (!user) return; 
+  try {
+    const timestamp = Date.now();
+    const [app, p, d, s] = await Promise.all([
+      api.get(`/appointments?type=${activeTab}`).then(res => res.data),
+      staffService.getAllPatients(),
+      userService.getAll('DOCTOR'),
+      userService.getAll('STAFF')
+    ]);
+    setData({ 
+      appointments: app || [], 
+      patients: p.data || [], 
+      doctors: d.data || [], 
+      staffs: s.data || [] 
+    });
+  } catch (e) { console.error(e); alert("Lỗi tải dữ liệu"); }
+}, [activeTab, user]); // Chỉ chạy lại khi activeTab hoặc user thay đổi
+
+useEffect(() => { 
+  if (!isLoading && user) fetchData(); 
+}, [fetchData, isLoading, user]); // fetchData nằm trong dependency
+  const filteredPatients = useMemo(() => {
+    return data.patients.filter((p: any) => p.name.toLowerCase().includes(patientSearch.toLowerCase()));
+  }, [data.patients, patientSearch]);
+
+  const filteredAppointments = useMemo(() => {
+    return data.appointments.filter((a: any) => {
+      const matchName = a.patient?.name.toLowerCase().includes(filters.name.toLowerCase());
+      const matchStatus = filters.status === '' || a.status === filters.status;
+      const matchDate = filters.date === '' || a.appointmentTime.startsWith(filters.date);
+      return matchName && matchStatus && matchDate;
+    });
+  }, [data.appointments, filters]);
+
+  const handleDelete = async (id: number) => {
+    if (confirm("Xóa lịch hẹn này?")) {
+      try {
+        await api.delete(`/appointments/${id}`);
+        fetchData();
+      } catch (e) { alert("Không thể xóa"); }
+    }
   };
-
-  useEffect(() => { fetchData(); }, []);
 
   const openModal = (app: any | null) => {
     if (app) {
       const noteParts = app.note?.split('|') || [];
-      const serviceVal = noteParts.find((n: string) => n.startsWith('DV:'))?.replace('DV:', '') || '';
-      const sourceVal = noteParts.find((n: string) => n.startsWith('NG:'))?.replace('NG:', '') || '';
-
-      setFormData({
-        ...app,
-        patientId: app.patientId || '',
-        doctorId: app.doctorId || '',
-        staffId: app.staffId || '',
+      const customSvc = noteParts.find((n: string) => n.startsWith('DV:'))?.replace('DV:', '') || '';
+      const customSrc = noteParts.find((n: string) => n.startsWith('NG:'))?.replace('NG:', '') || '';
+      const actualNote = noteParts.find((n: string) => !n.startsWith('DV:') && !n.startsWith('NG:')) || app.note;
+      
+      const staff = data.staffs.find((s: any) => s.id === app.staffId);
+      const isTele = staff?.department === Department.TELE_SALE;
+      
+      setFormData({ 
+        ...app, 
+        staffId: isTele ? app.staffId : '',
         appointmentTime: app.appointmentTime ? new Date(app.appointmentTime).toISOString().slice(0, 16) : '',
-        customService: serviceVal,
-        customSource: sourceVal
+        customService: customSvc,
+        customSource: customSrc,
+        note: actualNote
       });
-      setIsOtherService(app.service === 'OTHER');
-      setIsOtherSource(app.source === 'OTHER');
+      setPatientSearch(app.patient?.name || '');
       setEditingId(app.id);
     } else {
-      setFormData({ status: 'SCHEDULED', source: 'WALKIN', revenue: 0, service: 'CLEANING', patientId: '', doctorId: '', staffId: '', customService: '', customSource: '' });
-      setIsOtherService(false);
-      setIsOtherSource(false);
+      setFormData({ status: 'SCHEDULED', type: activeTab, service: 'CLEANING', source: 'WALKIN', revenue: 0, note: '' });
+      setPatientSearch('');
       setEditingId(null);
     }
     setIsOpenModal(true);
   };
 
   const handleSubmit = async () => {
-    // Chỉ gửi các trường hợp lệ, bỏ qua các object {connect...} nếu Backend báo lỗi Validation
-    const payload = {
-      patientId: Number(formData.patientId),
-      doctorId: Number(formData.doctorId),
-      staffId: formData.staffId ? Number(formData.staffId) : null,
-      appointmentTime: new Date(formData.appointmentTime).toISOString(),
-      status: formData.status,
-      revenue: Number(formData.revenue || 0),
-      service: isOtherService ? 'OTHER' : formData.service,
-      source: isOtherSource ? 'OTHER' : formData.source,
-      note: `${isOtherService ? 'DV:' + formData.customService + '|' : ''}${isOtherSource ? 'NG:' + formData.customSource : ''}`
+    // 1. Chuẩn bị payload (giữ nguyên logic của bạn)
+    if (isSaving) return; 
+    
+    setIsSaving(true);
+    try {
+
+    const baseNote = (formData.note || '').split('|')[0];
+    const servicePart = formData.service === 'OTHER' ? `|DV:${formData.customService || ''}` : '';
+    const sourcePart = formData.source === 'OTHER' ? `|NG:${formData.customSource || ''}` : '';
+    const finalNote = `${baseNote}${servicePart}${sourcePart}`;
+    const finalType = formData.status === 'DONE' ? AppointmentType.FOLLOW_UP : (formData.type || AppointmentType.SCHEDULE_VISIT);
+
+    const payload = { 
+        patientId: Number(formData.patientId),
+        doctorId: Number(formData.doctorId || 0),
+        staffId: formData.staffId ? Number(formData.staffId) : null,
+        appointmentTime: new Date(formData.appointmentTime).toISOString(),
+        revenue: Number(formData.revenue || 0),
+        note: finalNote,
+        status: formData.status,
+        type: finalType,
+        service: formData.service,
+        source: formData.source,
+        saleNote: formData.saleNote
     };
 
-    try {
-      if (editingId) await api.patch(`/appointments/${editingId}`, payload);
-      else await api.post('/appointments', payload);
-      setIsOpenModal(false);
-      fetchData();
+    if (editingId) {
+            await api.patch(`/appointments/${editingId}`, payload);
+        } else {
+            await api.post('/appointments', payload);
+        }
+
+        setIsOpenModal(false);
+        await new Promise(resolve => setTimeout(resolve, 300));
+        await fetchData();
+        
+        if (finalType !== activeTab) {
+            setActiveTab(finalType);
+        }
+
     } catch (e: any) { 
-      alert("Lỗi lưu: " + (e.response?.data?.message || "Kiểm tra lại dữ liệu")); 
+        alert("Lỗi lưu dữ liệu: " + (e.response?.data?.message || "Kiểm tra lại thông tin!")); 
+        console.error(e);
+    } finally {
+      setIsSaving(false);
     }
+};
+  
+  const handleStatusChange = (newStatus: string) => {
+    if (isReadOnly) return;
+    setFormData((prev: any) => {
+      const updatedData = { ...prev, status: newStatus };
+      if (newStatus === 'DEPOSITED') { 
+        updatedData.type = AppointmentType.PROCEDURE; 
+      }
+      return updatedData;
+    });
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Xóa lịch hẹn này?")) {
-      await api.delete(`/appointments/${id}`);
-      fetchData();
-    }
-  };
+  if (isLoading) return <div>Đang tải...</div>;
+  if (!user) return null;
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Quản lý Lịch Hẹn</h1>
-        <button onClick={() => openModal(null)} className="bg-blue-600 text-white px-6 py-2 rounded-xl">+ Đặt lịch mới</button>
+        {(isAdmin || (isReception && activeTab !== AppointmentType.PROCEDURE && activeTab !== 'FOLLOW_UP')) && (
+          <button onClick={() => openModal(null)} className="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition">+ Đặt lịch mới</button>
+        )}
+      </div>
+
+      <div className="flex gap-4 mb-6">
+        {Object.entries(TypeLabels).map(([key, label]) => (
+          <button key={key} onClick={() => setActiveTab(key)} className={`px-4 py-2 rounded-lg font-bold ${activeTab === key ? 'bg-gray-800 text-white' : 'bg-gray-200'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex gap-4 mb-4 bg-white p-4 rounded-xl border">
+        <input type="date" className="p-2 border rounded-lg" onChange={e => setFilters({...filters, date: e.target.value})} />
+        {activeTab !== AppointmentType.PROCEDURE && activeTab !== 'FOLLOW_UP' && (
+          <select className="p-2 border rounded-lg" onChange={e => setFilters({...filters, status: e.target.value})}>
+            <option value="">Tất cả trạng thái</option>
+            {Object.entries(StatusLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+        )}
+        <input type="text" placeholder="Tìm tên khách..." className="p-2 border rounded-lg flex-1" onChange={e => setFilters({...filters, name: e.target.value})} />
       </div>
 
       <div className="bg-white shadow rounded-xl border overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-800 text-white uppercase text-xs">
-            <tr>
-              <th className="p-4">Thời gian</th><th className="p-4">Khách</th>
-              <th className="p-4">Dịch vụ</th><th className="p-4">Nguồn</th>
-              <th className="p-4">Bác sĩ</th><th className="p-4">Trạng thái</th>
-              <th className="p-4">Doanh thu</th><th className="p-4">Bệnh án</th><th className="p-4">Hành động</th>
-            </tr>
-          </thead>
+  <tr>
+    {/* 1. Nhóm cố định luôn hiện */}
+    <th className="p-4">Thời gian</th>
+    <th className="p-4">Khách</th>
+    <th className="p-4">SĐT</th>
+
+    {/* 2. Nhóm cột ẩn theo Tab (Không phải Tái khám) */}
+    {!isFollowUp && (
+      <>
+        <th className="p-4">Nguồn</th>
+        <th className="p-4">Tình trạng</th>
+        <th className="p-4">Telesale</th>
+        <th className="p-4">Dịch vụ</th>
+      </>
+    )}
+
+    {/* 3. Nhóm cột Bác sĩ & Trạng thái (luôn hiện) */}
+    <th className="p-4">Bác sĩ</th>
+    <th className="p-4">Trạng thái</th>
+
+    {/* 4. Nhóm cột chỉ hiện ở tab Procedure (Thực hiện) */}
+    {activeTab === AppointmentType.PROCEDURE && !isFollowUp && (
+      <>
+        <th className="p-4">Sale Note</th>
+        <th className="p-4">Doanh thu</th>
+      </>
+    )}
+
+    {/* 5. Nhóm cố định cuối */}
+    <th className="p-4">Bệnh án</th>
+    <th className="p-4">Hành động</th>
+  </tr>
+</thead>
           <tbody className="divide-y">
-            {data.appointments.map((a: any) => {
-              const noteParts = a.note?.split('|') || [];
-              const svc = a.service === 'OTHER' ? noteParts.find((n:string) => n.startsWith('DV:'))?.replace('DV:','') : serviceLabels[a.service];
-              const src = a.source === 'OTHER' ? noteParts.find((n:string) => n.startsWith('NG:'))?.replace('NG:','') : sourceLabels[a.source];
-              return (
-                <tr key={a.id}>
-                  <td className="p-4">{new Date(a.appointmentTime).toLocaleString('vi-VN')}</td>
-                  <td className="p-4 font-bold">{a.patient?.name}</td>
-                  <td className="p-4">{svc || a.service}</td>
-                  <td className="p-4">{src || a.source}</td>
-                  <td className="p-4">{a.doctor?.name}</td>
-                  <td className="p-4 font-semibold">{statusMap[a.status]}</td>
-                  <td className="p-4">{a.revenue?.toLocaleString()}đ</td>
-                  <td className="p-4">
-                    {a.status === 'DONE' && (
-                      <a 
-  href={`/medical-record/create?appointmentId=${a.id}&patientId=${a.patient?.id}&doctorId=${a.doctor?.id}&patientName=${a.patient?.name}&doctorName=${a.doctor?.name}`}
-  className="bg-green-600 text-white px-3 py-1 rounded-lg text-xs font-bold hover:bg-green-700"
->
-  + Bệnh án
-</a>
-                    )}
-                  </td>
-                  <td className="p-4 text-center">
-                    <button onClick={() => openModal(a)} className="text-blue-600 mr-2 font-bold">Sửa</button>
-                    <button onClick={() => handleDelete(a.id)} className="text-red-500 font-bold">Xóa</button>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
+  {filteredAppointments.map((a: any) => (
+    <tr key={a.id} className="border-b hover:bg-gray-50">
+      {/* 1. Nhóm cố định */}
+      <td className="p-4">{new Date(a.appointmentTime).toLocaleString('vi-VN')}</td>
+      <td className="p-4 font-bold">{a.patient?.name}</td>
+      <td className="p-4">{a.patient?.phone || '-'}</td>
+
+      {/* 2. Nhóm cột ẩn theo Tab (Phải khớp với Header) */}
+      {!isFollowUp && (
+        <>
+          <td className="p-4">{SourceLabels[a.source as keyof typeof SourceLabels] || 'Khác'}</td>
+          <td className="p-4">{a.note?.split('|')[0]}</td>
+          <td className="p-4">{data.staffs.find((s: any) => s.id === a.staffId)?.name || '-'}</td>
+          <td className="p-4">{ServiceLabels[a.service as keyof typeof ServiceLabels] || 'Khác'}</td>
+        </>
+      )}
+
+      {/* 3. Nhóm cố định */}
+      <td className="p-4">{data.doctors.find((d: any) => d.id === a.doctorId)?.name || '-'}</td>
+      <td className="p-4"><span className="px-2 py-1 rounded bg-gray-100">{StatusLabels[a.status as keyof typeof StatusLabels]}</span></td>
+
+      {/* 4. Nhóm cột Procedure (Phải khớp với Header) */}
+      {activeTab === AppointmentType.PROCEDURE && !isFollowUp && (
+        <>
+          <td className="p-4">{a.saleNote || '-'}</td>
+          <td className="p-4">{a.revenue?.toLocaleString()}đ</td>
+        </>
+      )}
+
+      {/* 5. Nhóm cố định cuối */}
+      <td className="p-4">
+        <a href={`/medical-record/create?appointmentId=${a.id}`} className="text-blue-600 font-bold underline">+ Bệnh án</a>
+      </td>
+      {/* Cột Hành động - Phân quyền động */}
+<td className="p-4 text-center">
+  <div className="flex justify-center gap-2">
+    {canEdit ? (
+      <>
+        {/* Nút Sửa */}
+        <button 
+          onClick={() => openModal(a)} 
+          className="text-blue-600 font-bold hover:underline"
+        >
+          Sửa
+        </button>
+        
+        {/* Nút Xóa (Chỉ cho Sửa thì mới cho Xóa) */}
+        <button 
+          onClick={() => handleDelete(a.id)} 
+          className="text-red-600 font-bold hover:underline"
+        >
+          Xóa
+        </button>
+      </>
+    ) : (
+      /* Nút Xem (Dành cho người không có quyền sửa) */
+      <button 
+        onClick={() => openModal(a)} 
+        className="text-gray-600 font-bold underline"
+      >
+        Xem
+      </button>
+    )}
+  </div>
+</td>
+    </tr>
+  ))}
+</tbody>
         </table>
       </div>
-
+      
       {isOpenModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-          <div className="bg-white p-8 rounded-3xl w-[500px] shadow-2xl space-y-3 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">{editingId ? 'Sửa lịch hẹn' : 'Đặt lịch mới'}</h2>
-            
-            <select className="w-full p-3 border rounded-xl" value={formData.patientId} onChange={e => setFormData({...formData, patientId: e.target.value})}>
-              <option value="">-- Chọn Khách --</option>
-              {data.patients.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
+  <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+    <div className="bg-white p-6 rounded-3xl w-[600px] shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <h2 className="text-xl font-bold">
+        {editingId ? (isReadOnly ? 'Xem lịch hẹn' : 'Sửa lịch hẹn') : 'Đặt lịch mới'}
+      </h2>
 
-            <input type="datetime-local" className="w-full p-3 border rounded-xl" value={formData.appointmentTime} onChange={e => setFormData({...formData, appointmentTime: e.target.value})} />
+      {(() => {
+        // Chỉ ẩn Sale Note & Doanh thu ở tab Lịch hẹn
+        const isScheduleTab = activeTab === AppointmentType.SCHEDULE; 
+        const inputClass = `w-full p-3 border rounded-xl transition ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`;
+        const labelClass = "text-sm font-semibold text-gray-700";
 
-            <div className="grid grid-cols-2 gap-2">
-              <select className="p-3 border rounded-xl" value={formData.doctorId} onChange={e => setFormData({...formData, doctorId: e.target.value})}>
-                <option value="">-- Bác sĩ --</option>
-                {data.doctors.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
-              <select className="p-3 border rounded-xl" value={formData.staffId} onChange={e => setFormData({...formData, staffId: e.target.value})}>
-                <option value="">-- Tư vấn --</option>
-                {data.staffs.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+        return (
+          <div className="space-y-4">
+            {/* Hàng 1: Thời gian & Trạng thái */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className={labelClass}>Thời gian</label>
+                <input disabled={isReadOnly} type="datetime-local" className={inputClass} value={formData.appointmentTime || ''} onChange={e => setFormData({...formData, appointmentTime: e.target.value})} />
+              </div>
+              <div className="space-y-1">
+                <label className={labelClass}>Trạng thái</label>
+                <select disabled={isReadOnly} className={inputClass} value={formData.status || ''} onChange={(e) => handleStatusChange(e.target.value)}>
+                  {Object.entries(StatusLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </div>
             </div>
 
-            <select className="w-full p-3 border rounded-xl" value={isOtherService ? 'OTHER' : formData.service} onChange={e => {
-              if(e.target.value === 'OTHER') { setIsOtherService(true); setFormData({...formData, service: 'OTHER'}); }
-              else { setIsOtherService(false); setFormData({...formData, service: e.target.value}); }
-            }}>
-              <option value="CLEANING">Tẩy trắng</option><option value="IMP">Implant</option><option value="CERAMIC">Răng sứ</option><option value="OTHER">Khác</option>
-            </select>
-            {isOtherService && <input className="w-full p-3 border rounded-xl" placeholder="Tên dịch vụ..." value={formData.customService} onChange={e => setFormData({...formData, customService: e.target.value})} />}
-
-            <select className="w-full p-3 border rounded-xl" value={isOtherSource ? 'OTHER' : formData.source} onChange={e => {
-              if(e.target.value === 'OTHER') { setIsOtherSource(true); setFormData({...formData, source: 'OTHER'}); }
-              else { setIsOtherSource(false); setFormData({...formData, source: e.target.value}); }
-            }}>
-              <option value="ADS">Ads</option><option value="SEEDING">Seeding</option><option value="WALKIN">Vãng lai</option><option value="OTHER">Khác</option>
-            </select>
-            {isOtherSource && <input className="w-full p-3 border rounded-xl" placeholder="Tên nguồn..." value={formData.customSource} onChange={e => setFormData({...formData, customSource: e.target.value})} />}
-
-            <select className="w-full p-3 border rounded-xl" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}>
-              <option value="SCHEDULED">Đặt lịch</option><option value="DEPOSITED">Đã cọc</option>
-              <option value="DONE">Đã làm dịch vụ</option><option value="CANCELLED">Đã hủy</option>
-              <option value="FAILED">Không đến</option>
-            </select>
-
-            {editingId && <input type="number" className="w-full p-3 border rounded-xl" placeholder="Doanh thu" value={formData.revenue} onChange={e => setFormData({...formData, revenue: e.target.value})} />}
-
-            <div className="flex gap-2 pt-4">
-              <button onClick={() => setIsOpenModal(false)} className="flex-1 py-3 bg-gray-200 rounded-xl font-bold">Hủy</button>
-              <button onClick={handleSubmit} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold">Lưu lại</button>
+            {/* Hàng 2: Khách hàng & Bác sĩ */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1 relative">
+                <label className={labelClass}>Khách hàng</label>
+                <input disabled={isReadOnly} className={inputClass} placeholder="Tìm tên..." value={patientSearch} onChange={e => { if(!isReadOnly) { setPatientSearch(e.target.value); setShowPatientDropdown(true); }}} />
+                {!isReadOnly && showPatientDropdown && (
+                  <div className="absolute z-50 bg-white border rounded-xl shadow-lg w-full max-h-40 overflow-y-auto mt-1">
+                    {filteredPatients.map((p:any) => <div key={p.id} className="p-2 cursor-pointer hover:bg-gray-100" onClick={() => { setFormData({...formData, patientId: p.id}); setPatientSearch(p.name); setShowPatientDropdown(false); }}>{p.name}</div>)}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1">
+                <label className={labelClass}>Bác sĩ</label>
+                <select disabled={isReadOnly} className={inputClass} value={formData.doctorId || ''} onChange={e => setFormData({...formData, doctorId: e.target.value})}>
+                  <option value="">-- Chọn bác sĩ --</option>
+                  {data.doctors.map((d:any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+              </div>
             </div>
+
+            {/* Hàng 3: Telesale, Dịch vụ, Nguồn */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <label className={labelClass}>Telesale</label>
+                <select disabled={isReadOnly} className={inputClass} value={formData.staffId || ''} onChange={e => setFormData({...formData, staffId: e.target.value ? Number(e.target.value) : null})}>
+                  <option value="">-- Chọn --</option>
+                  {data.staffs.filter((s:any) => s.department === Department.TELE_SALE).map((s:any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1">
+                 <label className={labelClass}>Dịch vụ</label>
+                 <select disabled={isReadOnly} className={inputClass} value={formData.service || ''} onChange={e => setFormData({...formData, service: e.target.value})}>
+                    {Object.entries(ServiceLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    <option value="OTHER">Khác</option>
+                 </select>
+              </div>
+              <div className="space-y-1">
+                <label className={labelClass}>Nguồn</label>
+                <select disabled={isReadOnly} className={inputClass} value={formData.source || ''} onChange={e => setFormData({...formData, source: e.target.value})}>
+                  <option value="ADS">ADS</option>
+                  <option value="SEEDING">Seeding</option>
+                  <option value="WALKIN">Vãng lai</option>
+                  <option value="OTHER">Khác</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Hàng 4: Tình trạng (Note) */}
+            <div className="space-y-1">
+              <label className={labelClass}>Tình trạng</label>
+              <textarea disabled={isReadOnly} className={inputClass} rows={2} value={formData.note || ''} onChange={e => setFormData({...formData, note: e.target.value})} />
+            </div>
+
+            {/* PHẦN NÂNG CAO: Chỉ hiện khi KHÔNG phải tab Lịch hẹn */}
+            {!isScheduleTab && (
+              <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-dashed">
+                <div className="space-y-1 col-span-2">
+                  <label className={labelClass}>Sale Note (Nội bộ)</label>
+                  <textarea disabled={isReadOnly} className={inputClass} rows={2} value={formData.saleNote || ''} onChange={e => setFormData({...formData, saleNote: e.target.value})} />
+                </div>
+                <div className="space-y-1 col-span-2">
+                  <label className={labelClass}>Doanh thu dự kiến</label>
+                  <input disabled={isReadOnly} type="number" className={inputClass} value={formData.revenue ?? ''} onChange={e => setFormData({...formData, revenue: e.target.value})} />
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
+
+      <div className="flex gap-2 pt-4">
+        <button onClick={() => setIsOpenModal(false)} className="flex-1 py-3 bg-gray-200 rounded-xl font-bold">Hủy</button>
+        {!isReadOnly && (
+          <button onClick={handleSubmit} disabled={isSaving} className="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white">
+            {isSaving ? 'Đang lưu...' : 'Lưu thông tin'}
+          </button>
+        )}
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

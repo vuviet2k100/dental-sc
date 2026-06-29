@@ -1,7 +1,7 @@
 'use client';
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { api } from '@/app/lib/axios'; // Import instance api đã cấu hình
+import { patientService } from '@/services/api'; // Import service
 import Link from 'next/link';
 import { MapPin, Phone, ArrowLeft, Calendar, User } from 'lucide-react';
 import MedicalRecordsList from '@/components/MedicalRecordsList';
@@ -11,7 +11,7 @@ export default function PatientDetailPage() {
   const [patient, setPatient] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'info' | 'appointments' | 'medicalRecords'>('info');
   
-  const [isStaff, setIsStaff] = useState(() => {
+  const [isStaff] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('user_role')?.trim().toUpperCase() === 'STAFF';
     }
@@ -20,16 +20,18 @@ export default function PatientDetailPage() {
 
   const fetchData = async () => {
     try {
-      // Instance api đã tự động đính kèm Token, không cần truyền headers
-      const res = await api.get(`/patients/${id}`);
-      setPatient(res.data);
+      // Sử dụng service thay vì api.get trực tiếp
+      if (id) {
+        const res = await patientService.getById(id as string);
+        setPatient(res.data);
+      }
     } catch (err) { 
       console.error("Lỗi tải thông tin bệnh nhân:", err); 
     }
   };
 
   useEffect(() => { 
-    if (id) fetchData(); 
+    fetchData(); 
   }, [id]);
 
   if (!patient) return <div className="p-10 text-center text-slate-500">Đang tải hồ sơ...</div>;

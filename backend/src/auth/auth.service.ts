@@ -39,7 +39,9 @@ export class AuthService {
 }
 
   async getProfile(userId: number) {
-    return this.prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, role: true } });
+    return this.prisma.user.findUnique({ 
+      where: { id: userId }, 
+      select: { id: true, name: true, email: true, role: true, department: true } });
   }
 
   async registerDoctor(dto: RegisterDoctorDto) {

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { api } from '@/app/lib/axios';
+import { medicalRecordService } from '@/services/api'; // Import service
 import Link from 'next/link';
 import { Trash2, Loader2 } from 'lucide-react';
 
@@ -18,8 +18,8 @@ export default function MedicalRecordsList({ patientId }: { patientId: string })
 
   const fetchRecords = async () => {
     try {
-      // Gọi API có truyền patientId để Backend lọc dữ liệu
-      const res = await api.get(`/medical-record?patientId=${patientId}`);
+      // Sử dụng service thay vì gọi trực tiếp api.get
+      const res = await medicalRecordService.getByPatient(patientId);
       setRecords(res.data);
     } catch (err: any) {
       if (err.response?.status === 403) setError("Bạn không có quyền xem bệnh án.");
@@ -35,8 +35,9 @@ export default function MedicalRecordsList({ patientId }: { patientId: string })
     if (!confirm('Bạn có chắc muốn xóa bệnh án này?')) return;
     setIsDeleting(id);
     try {
-      await api.delete(`/medical-record/${id}`);
-      fetchRecords(); // Reload danh sách sau khi xóa
+      // Sử dụng service xóa bệnh án
+      await medicalRecordService.delete(id.toString());
+      fetchRecords(); 
     } catch (err) {
       alert('Không thể xóa bệnh án.');
     } finally {

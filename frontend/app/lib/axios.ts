@@ -23,8 +23,9 @@ api.interceptors.response.use(
   (error) => {
     // Chỉ đá về login nếu thực sự không có quyền hoặc token hết hạn
     if (error.response?.status === 401) {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
         localStorage.removeItem('access_token');
+        window.location.href = '/login';
       }
     }
     return Promise.reject(error);

@@ -1,48 +1,21 @@
 'use client';
+import Link from 'next/link';
 
 export default function Home() {
   return (
-    <main style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '100vh',
-      fontFamily: 'Arial, sans-serif',
-      backgroundColor: '#f0f9ff',
-      padding: '20px'
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '40px',
-        borderRadius: '15px',
-        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-        textAlign: 'center',
-        maxWidth: '500px'
-      }}>
-        <h1 style={{ color: '#0369a1', marginBottom: '10px' }}>DentalCare Pro</h1>
-        <p style={{ color: '#64748b', marginBottom: '30px' }}>
+    <main className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-5">
+      <div className="bg-white p-10 rounded-2xl shadow-xl text-center max-w-md border border-slate-100">
+        <h1 className="text-3xl font-black text-sky-700 mb-2">DentalCare Pro</h1>
+        <p className="text-slate-500 mb-8">
           Hệ thống quản lý phòng khám nha khoa chuyên nghiệp và bảo mật.
         </p>
         
-        <a 
+        <Link 
           href="/login" 
-          style={{
-            display: 'inline-block',
-            backgroundColor: '#0284c7',
-            color: 'white',
-            padding: '12px 30px',
-            borderRadius: '8px',
-            textDecoration: 'none',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            transition: 'background 0.3s'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#0369a1'}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#0284c7'}
+          className="inline-block bg-sky-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-sky-700 transition-all shadow-lg shadow-sky-200"
         >
           Đăng nhập hệ thống
-        </a>
+        </Link>
       </div>
     </main>
   );

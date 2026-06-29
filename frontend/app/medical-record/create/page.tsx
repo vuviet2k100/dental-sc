@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { api } from '@/app/lib/axios';
+import { medicalRecordService } from '@/services/api'; // Import service
 import { ArrowLeft, FilePlus, Loader2, User, Stethoscope, AlertCircle } from 'lucide-react';
 import MedicalRecordForm from '@/components/MedicalRecordForm';
 
@@ -10,7 +10,6 @@ function CreateFormContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
-  // Lấy dữ liệu từ URL truyền qua từ AppointmentsPage
   const patientId = searchParams.get('patientId');
   const doctorId = searchParams.get('doctorId');
   const appointmentId = searchParams.get('appointmentId');
@@ -21,7 +20,6 @@ function CreateFormContent() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = async (data: { diagnosis: string; treatment: string; note: string }) => {
-    // Kiểm tra tính hợp lệ của dữ liệu trước khi gửi
     if (!patientId || !doctorId || !appointmentId) {
       setErrorMsg('Thiếu thông tin liên kết (Bệnh nhân/Bác sĩ/Cuộc hẹn)!');
       return;
@@ -38,13 +36,11 @@ function CreateFormContent() {
         appointmentId: Number(appointmentId)
       };
 
-      // Gửi request tới Backend
-      const response = await api.post(`/medical-record`, payload);
-      
-      // Chuyển hướng đến trang chi tiết bệnh án sau khi lưu thành công
+      // Sử dụng Service thay vì gọi trực tiếp api.post
+      const response = await medicalRecordService.create(payload);
       router.push(`/medical-record/${response.data.id}`);
+      
     } catch (err: any) {
-      // Xử lý lỗi linh hoạt: có thể là chuỗi hoặc mảng lỗi từ NestJS
       const errorData = err.response?.data;
       let message = 'Lỗi không xác định.';
       
@@ -55,7 +51,6 @@ function CreateFormContent() {
       }
       
       setErrorMsg(message);
-      console.error("Lỗi nghiệp vụ:", errorData);
     } finally {
       setLoading(false);
     }
@@ -75,7 +70,6 @@ function CreateFormContent() {
           <FilePlus className="text-blue-600" /> Thêm bệnh án mới
         </h1>
 
-        {/* Hiển thị lỗi nếu có */}
         {errorMsg && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-2 text-sm">
             <AlertCircle size={20} />
@@ -83,7 +77,6 @@ function CreateFormContent() {
           </div>
         )}
 
-        {/* Thông tin hiển thị nhanh */}
         <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-slate-50 rounded-xl border">
           <div className="flex items-center gap-2 text-sm text-slate-600">
             <User size={18} className="text-blue-500" /> Bệnh nhân: <span className="font-bold">{patientName}</span>
@@ -96,7 +89,6 @@ function CreateFormContent() {
           </div>
         </div>
 
-        {/* Form nhập liệu */}
         <MedicalRecordForm onSubmit={handleSubmit} loading={loading} />
       </div>
     </div>

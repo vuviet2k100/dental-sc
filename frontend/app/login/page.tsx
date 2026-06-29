@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '@/app/lib/axios';
+import { authService } from '@/services/api'; // 1. Import authService
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -9,45 +9,42 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false); // 2. Thêm state loading
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
+
     try {
-      const res = await api.post('/auth/login', { email, password });
+      // 3. Sử dụng authService thay cho api.post trực tiếp
+      const res = await authService.login({ email, password });
       
-      // Log để xem cấu trúc thực tế của Backend trả về
-      console.log("Dữ liệu nhận được từ Backend:", res.data);
+      const { user, access_token } = res.data;
 
-      // Dùng Optional Chaining để tránh lỗi nếu cấu trúc trả về khác dự đoán
-      const user = res.data?.user;
-      const userRole = user?.role;
-      const userId = user?.id;
-
-      if (!userRole) {
+      if (!user?.role) {
         throw new Error("Không tìm thấy thông tin quyền truy cập.");
       }
       
-      localStorage.setItem('access_token', res.data.access_token);
-      localStorage.setItem('user_role', userRole); 
-      localStorage.setItem('user_id', userId?.toString() || '');
+      // Lưu trữ thông tin (Sau này bạn có thể chuyển logic này vào AuthContext)
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('user_role', user.role); 
+      localStorage.setItem('user_id', user.id?.toString() || '');
       
-      console.log("Đăng nhập thành công! Quyền tài khoản:", userRole);
+      // Điều hướng dựa trên role
+      const routes: Record<string, string> = {
+        'ADMIN': '/dashboard',
+        'DOCTOR': '/patients',
+        'STAFF': '/appointments'
+      };
 
-      if (userRole === 'ADMIN') {
-        router.push('/dashboard');
-      } else if (userRole === 'DOCTOR') {
-        router.push('/patients'); 
-      } else if (userRole === 'STAFF') {
-        router.push('/appointments'); 
-      } else {
-        router.push('/'); 
-      }
+      router.push(routes[user.role] || '/');
       
     } catch (err: any) {
-      // Sửa lỗi: Không gọi res.data ở đây vì khi lỗi, res chưa tồn tại
       const errorMessage = err.response?.data?.message || 'Đăng nhập thất bại';
-      console.error("Lỗi chi tiết:", err.response?.data || err.message);
       setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,9 +75,10 @@ export default function LoginPage() {
 
           <button 
             type="submit"
-            className="w-full p-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-200"
+            disabled={loading}
+            className="w-full p-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-200 disabled:opacity-50"
           >
-            Đăng nhập
+            {loading ? 'Đang xử lý...' : 'Đăng nhập'}
           </button>
         </form>
 

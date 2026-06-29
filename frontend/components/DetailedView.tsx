@@ -16,14 +16,11 @@ export default function DetailedView({ type, user }: DetailedViewProps) {
     
     const fetchData = async () => {
       setLoading(true);
-      console.log("Đang gọi API với staffId:", user.id); // <--- KIỂM TRA LOG Ở F12
       try {
-        // Sử dụng Service đã cấu hình sẵn trong api.ts để tự động gửi token và handle 401
         const res = type === 'DOCTOR' 
           ? await doctorService.getMedicalRecords(user.id)
           : await staffService.getAllAppointments(user.id);
           
-      console.log("Dữ liệu nhận được:", res.data); // <--- KIỂM TRA LOG Ở F12
         setData(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         console.error("Lỗi khi tải dữ liệu:", err);

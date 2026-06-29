@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { api } from '@/app/lib/axios'; // Import instance api đã cấu hình
+import { medicalRecordService } from '@/services/api'; // Import service thay vì api trực tiếp
 import { Upload } from 'lucide-react';
 
 interface Props {
@@ -20,12 +20,8 @@ export default function FileUploader({ recordId, onUploadSuccess }: Props) {
 
     setLoading(true);
     try {
-      // Instance 'api' đã đính kèm token trong interceptor
-      await api.post(`/medical-record/upload/${recordId}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      // Sử dụng service layer
+      await medicalRecordService.upload(recordId, formData);
       
       setFile(null);
       onUploadSuccess();
@@ -43,7 +39,7 @@ export default function FileUploader({ recordId, onUploadSuccess }: Props) {
       <input 
         type="file" 
         onChange={(e) => setFile(e.target.files?.[0] || null)} 
-        className="text-sm"
+        className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
       />
       <button 
         onClick={handleUpload}

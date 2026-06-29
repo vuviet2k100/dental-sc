@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { api } from '@/app/lib/axios'; // IMPORT INSTANCE ĐÃ CẤU HÌNH
-import { Users, CalendarDays, Stethoscope, UserCog, TrendingUp, Clock } from 'lucide-react';
+import { dashboardService } from '@/services/api'; // Import service
+import { Users, CalendarDays, Stethoscope, UserCog, Clock } from 'lucide-react';
 
 interface DashboardStats {
   patients: number;
@@ -18,8 +18,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // KHÔNG CẦN config headers thủ công, vì interceptor trong 'api' đã làm rồi
-        const res = await api.get('/dashboard'); 
+        const res = await dashboardService.getStats(); // Gọi qua service
         setStats(res.data);
       } catch (error) {
         console.error("Lỗi tải dữ liệu:", error);
@@ -39,8 +38,6 @@ export default function DashboardPage() {
 
   return (
     <div className="p-10 bg-gray-50 min-h-screen">
-      {/* ... giữ nguyên phần UI của bạn ... */}
-      {/* Chỉ cần thay thế phần loading và grid như bên dưới */}
       {loading ? (
         <div className="flex items-center justify-center h-64 text-gray-500 italic">
           <div className="animate-spin mr-3"><Clock size={24} /></div>

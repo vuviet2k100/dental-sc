@@ -20,9 +20,6 @@ export class RegisterDoctorDto {
   
   @IsOptional()
   phone!: string; 
-
-  @IsOptional()
-  specialty!: string;
 }
 
 // --- DTO Đăng ký cho Nhân viên ---
@@ -41,9 +38,7 @@ export class RegisterStaffDto {
 
   @IsString()
   role?: string;
-
-  @IsOptional()
-  position!: string; 
+ 
 
   // Thêm field bắt buộc cho Staff
   @IsEnum(Department, { message: 'Phòng ban không hợp lệ' })
