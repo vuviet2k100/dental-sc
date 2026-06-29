@@ -39,6 +39,13 @@ export default function AppointmentsPage() {
   const isFollowUp = activeTab === AppointmentType.FOLLOW_UP; 
 
   const canEdit = useMemo(() => {
+    console.log(">>> CHECK PERMISSION:", {
+    activeTab,
+    isDoctor,
+    isReception,
+    isAdmin,
+    userRole: user?.role, // hoặc user?.department tùy ông lưu
+  });
   if (isAdmin) return true; // Admin luôn được sửa mọi thứ
   
   if (activeTab === AppointmentType.SCHEDULE_VISIT) {
