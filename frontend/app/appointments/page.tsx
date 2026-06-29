@@ -336,7 +336,7 @@ useEffect(() => {
 
       {(() => {
         // Chỉ ẩn Sale Note & Doanh thu ở tab Lịch hẹn
-        const isScheduleTab = activeTab === AppointmentType.SCHEDULE; 
+        const isScheduleTab = activeTab === AppointmentType.SCHEDULE_VISIT; 
         const inputClass = `w-full p-3 border rounded-xl transition ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`;
         const labelClass = "text-sm font-semibold text-gray-700";
 
