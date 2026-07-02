@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { Loader2, Save, AlertCircle } from 'lucide-react';
 
-// Định nghĩa interface rõ ràng để tái sử dụng
 export interface MedicalRecordFormData {
   diagnosis: string;
   treatment: string;
@@ -17,28 +16,37 @@ interface FormProps {
 }
 
 export default function MedicalRecordForm({ initialData, onSubmit, loading, isStaff = false }: FormProps) {
+  // Khởi tạo state
   const [formData, setFormData] = useState<MedicalRecordFormData>({
-    diagnosis: '',
-    treatment: '',
-    note: ''
+    diagnosis: initialData?.diagnosis || '',
+    treatment: '', // Luôn để trống để bác sĩ nhập mới
+    note: initialData?.note || ''
   });
 
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData(prev => ({
+        ...prev,
+        diagnosis: initialData.diagnosis || '',
+        note: initialData.note || ''
+        // treatment vẫn để trống như yêu cầu
+      }));
     }
   }, [initialData]);
 
   const handleValidateAndSubmit = () => {
-    // Validate cơ bản
+    // Chỉ bắt buộc chẩn đoán và điều trị (trường treatment)
     if (!formData.diagnosis.trim() || !formData.treatment.trim()) {
-      setLocalError('Chẩn đoán và Điều trị không được để trống!');
+      setLocalError('Chẩn đoán và Điều trị là bắt buộc!');
       return;
     }
     setLocalError(null);
     onSubmit(formData);
+    
+    // Reset trường treatment sau khi submit thành công
+    setFormData(prev => ({ ...prev, treatment: '' }));
   };
 
   return (
@@ -49,7 +57,7 @@ export default function MedicalRecordForm({ initialData, onSubmit, loading, isSt
         </div>
       )}
 
-      {/* Các trường nhập liệu */}
+      {/* Chẩn đoán */}
       <div>
         <label className="block text-sm font-semibold text-slate-700 mb-1.5">
           Chẩn đoán <span className="text-red-500">*</span>
@@ -63,6 +71,7 @@ export default function MedicalRecordForm({ initialData, onSubmit, loading, isSt
         />
       </div>
 
+      {/* Điều trị */}
       <div>
         <label className="block text-sm font-semibold text-slate-700 mb-1.5">
           Điều trị <span className="text-red-500">*</span>
@@ -70,18 +79,19 @@ export default function MedicalRecordForm({ initialData, onSubmit, loading, isSt
         <textarea 
           disabled={isStaff} 
           className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition disabled:bg-slate-100 h-24" 
-          placeholder="Nhập phác đồ điều trị..."
+          placeholder="Nhập phác đồ điều trị mới..."
           value={formData.treatment} 
           onChange={e => setFormData({...formData, treatment: e.target.value})} 
         />
       </div>
 
+      {/* Tư vấn (Không bắt buộc) */}
       <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tư vấn</label>
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tư vấn (Tùy chọn)</label>
         <textarea 
           disabled={isStaff} 
           className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition disabled:bg-slate-100 h-24" 
-          placeholder="Nhập lời khuyên hoặc ghi chú thêm..."
+          placeholder="Nhập lời khuyên hoặc ghi chú thêm (không bắt buộc)..."
           value={formData.note} 
           onChange={e => setFormData({...formData, note: e.target.value})} 
         />

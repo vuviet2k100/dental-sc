@@ -9,7 +9,7 @@ export class AppointmentsService {
   async getDashboardStats() {
     const [patients, appointments, doctors, staff] = await Promise.all([
       this.prisma.patient.count(),
-      this.prisma.appointment.count(),
+      this.prisma.appointment.count({ where: { isDeleted: false } }),
       this.prisma.user.count({ where: { role: 'DOCTOR' } }),
       this.prisma.user.count({ where: { role: 'STAFF' } }),
     ]);
@@ -19,7 +19,7 @@ export class AppointmentsService {
   // 2. Dùng cho findOne (Cần 1 tham số: id)
   async findOne(id: number) {
     return this.prisma.appointment.findUnique({
-      where: { id },
+      where: { id, isDeleted: false },
       include: { 
         patient: true, 
         doctor: { select: { name: true, department: true } }, 
@@ -30,8 +30,9 @@ export class AppointmentsService {
 
   // 3. Dùng cho remove (Cần 1 tham số: id)
   async remove(id: number) {
-    return this.prisma.appointment.delete({
+    return this.prisma.appointment.update({
       where: { id },
+      data: { isDeleted: true },
     });
   }
 
@@ -74,6 +75,9 @@ export class AppointmentsService {
         doctorId: data.doctorId,
         patientId: data.patientId,
         staffId: data.staffId,
+        saleNote: data.saleNote,
+        revenue: data.revenue,
+        //teleNote: data.teleNote,
       };
     } 
     else if (currentUser.department === 'TELE_SALE') {
@@ -91,16 +95,16 @@ export class AppointmentsService {
     }
 
     // Lọc sạch dữ liệu: Chỉ lấy những field có giá trị (không phải undefined)
-    const updateData = Object.fromEntries(
-      Object.entries(fieldsToUpdate).filter(([_, v]) => v !== undefined)
-    );
+    const updateData = Object.keys(fieldsToUpdate).reduce((acc, key) => {
+      if (fieldsToUpdate[key] !== undefined) {
+        acc[key] = fieldsToUpdate[key];
+      }
+      return acc;
+    }, {} as any);
 
     if (Object.keys(updateData).length === 0) {
       throw new Error("Không có dữ liệu hợp lệ để cập nhật hoặc bạn không có quyền!");
     }
-
-    // Log debug (bạn có thể bỏ nếu thấy ổn định)
-    console.log("Dữ liệu update thực tế:", updateData);
 
     return this.prisma.appointment.update({
       where: { id },
@@ -110,7 +114,7 @@ export class AppointmentsService {
   }
 
   async findAll(staffId?: number, type?: string) {
-    const where: any = {};
+    const where: any = { isDeleted: false};
     if (staffId) where.staffId = staffId;
     if (type) where.type = type;
 
@@ -119,7 +123,10 @@ export class AppointmentsService {
       include: { 
         patient: { select: { name: true, phone: true } }, 
         doctor: { select: { name: true, department: true } }, // Đã thêm department
-        staff: { select: { name: true, department: true } }   // Đã thêm department
+        staff: { select: { name: true, department: true } },   // Đã thêm department
+        medicalRecord: {
+          select: { id: true } // Chỉ lấy id của medicalRecord để kiểm tra tồn tại
+        }
       },
       orderBy: { appointmentTime: 'asc' }
     });

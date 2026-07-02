@@ -53,10 +53,14 @@ export default function MedicalRecordsList({ patientId }: { patientId: string })
         records.map((r: any) => (
           <div key={r.id} className="p-4 border rounded-lg shadow-sm bg-white flex justify-between items-center">
             <div>
-              <h4 className="font-bold text-lg text-gray-800">{r.diagnosis}</h4>
+             <h4 className="font-bold text-lg text-gray-800">{r.diagnosis}</h4>
               <p className="text-gray-600 text-sm mt-1">Điều trị: {r.treatment}</p>
-              <Link href={`/medical-record/${r.id}`} className="text-blue-600 text-sm font-semibold mt-2 inline-block">
-                → Xem chi tiết
+              {/* Lấy 1 dòng note cuối cùng làm tóm tắt */}
+              <p className="text-xs text-gray-400 mt-2 italic">
+                Ghi chú gần nhất: {r.treatment?.split('---').pop()?.substring(0, 50)}...
+              </p>
+              <Link href={`/medical-record/${r.id}`} className="text-blue-600 text-sm font-semibold mt-2 block">
+                → Xem chi tiết đầy đủ
               </Link>
             </div>
             

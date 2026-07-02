@@ -66,10 +66,15 @@ async create(dto: any) {
   async findOne(id: number) {
     const record = await this.prisma.medicalRecord.findUnique({
       where: { id },
-      include: { 
-        patient: true, 
-        doctor: true,
-        images: true 
+      include: {
+        images: true,
+        appointment: {
+          include: { 
+            patient: true, 
+            doctor: true,
+            staff: true 
+          }
+        }
       }
     });
     if (!record) throw new NotFoundException('Không tìm thấy bệnh án');

@@ -90,6 +90,7 @@ model Patient {
 
 model Appointment {
   id              Int               @id @default(autoincrement())
+  isDeleted       Boolean           @default(false)
   appointmentTime DateTime
   note            String?
   status          AppointmentStatus @default(SCHEDULED)
