@@ -12,45 +12,32 @@ import { useAuth } from '@/context/AuthContext';
 export default function AppointmentsPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const [isSaving, setIsSaving] = useState(false);
 
+  // --- STATE ---
+  const [isSaving, setIsSaving] = useState(false);
   const [data, setData] = useState<any>({ appointments: [], patients: [], doctors: [], staffs: [] });
   const [isOpenModal, setIsOpenModal] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false); // Đã thêm
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<any>({});
   const [activeTab, setActiveTab] = useState<string>(AppointmentType.SCHEDULE_VISIT);
-  
   const [filters, setFilters] = useState({ date: '', status: '', name: '' });
   const [patientSearch, setPatientSearch] = useState('');
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
 
-  useEffect(() => {
-    if (!isLoading && !user) router.push('/login');
-  }, [user, isLoading, router]);
-
-  useEffect(() => {
-  setFilters({ date: '', status: '', name: '' });
-  setPatientSearch('');
-}, [activeTab]);
-
+  // --- LOGIC QUYỀN ---
   const isAdmin = user?.role === 'ADMIN';
-  const isDoctor = user?.role === 'DOCTOR';
-  console.log(">>> Role thực tế của user:", user.role); 
-  console.log(">>> Giá trị isDoctor đang tính toán:", isDoctor);
   const isReception = user?.department === 'RECEPTION';
-  const isTeleSale = user?.department === 'TELE_SALE';
-
   const isFollowUp = activeTab === AppointmentType.FOLLOW_UP; 
 
+
   const canEdit = useMemo(() => {
-  if (isAdmin) return true;
-  const dep = user?.department;
-  
-  if (activeTab === AppointmentType.SCHEDULE_VISIT) return dep === Department.TELE_SALE;
-  if (activeTab === AppointmentType.PROCEDURE) return isReception;
-  if (activeTab === AppointmentType.FOLLOW_UP) return isReception;
-  
-  return false;
+    if (isAdmin) return true;
+    const dep = user?.department;
+    if (activeTab === AppointmentType.SCHEDULE_VISIT) return dep === Department.TELE_SALE;
+    if (activeTab === AppointmentType.PROCEDURE) return isReception;
+    if (activeTab === AppointmentType.FOLLOW_UP) return isReception;   
+    return false;
 }, [activeTab, isAdmin, isReception, user?.department]);
 
 const canCreate = useMemo(() => {
@@ -60,8 +47,20 @@ const canCreate = useMemo(() => {
   return (isAdmin || isTeleSale) && activeTab === AppointmentType.SCHEDULE_VISIT;
 }, [isAdmin, user?.department, activeTab]);
 
+// --- CÁC HÀM XỬ LÝ ---
+  useEffect(() => {
+    if (!isLoading && !user) router.push('/login');
+  }, [user, isLoading, router]);
+
+  useEffect(() => {
+  setFilters({ date: '', status: '', name: '' });
+  setPatientSearch('');
+}, [activeTab]);
+
+
+ 
 // Biến này để khóa các input trong Modal
-const isReadOnly = !canEdit;
+//const isReadOnly = !canEdit;
 
 const fetchData = useCallback(async () => {
   if (!user) return; 
@@ -104,7 +103,7 @@ const filteredPatients = useMemo(() => {
       const matchStatus = filters.status === '' || a.status === filters.status;
       const datePart = new Date(a.appointmentTime).toISOString().split('T')[0];
       const matchDate = filters.date === '' || datePart === filters.date;
-        (a.appointmentTime ? a.appointmentTime.split('T')[0] === filters.date : false);      
+        //(a.appointmentTime ? a.appointmentTime.split('T')[0] === filters.date : false);      
         
       return matchType && matchName && matchStatus && matchDate;
     });
@@ -127,7 +126,18 @@ const filteredPatients = useMemo(() => {
   };
 
   const openModal = (app: any | null) => {
+    const isAuthorized = !app || isAdmin || canEdit;
+  setIsReadOnly(!isAuthorized);
     if (app) {
+      const formatForInput = (isoDate: string) => {
+        const date = new Date(isoDate);
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const hh = String(date.getHours()).padStart(2, '0');
+        const min = String(date.getMinutes()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+      };
       const noteParts = app.note?.split('|') || [];
       const customSvc = noteParts.find((n: string) => n.startsWith('DV:'))?.replace('DV:', '') || '';
       const customSrc = noteParts.find((n: string) => n.startsWith('NG:'))?.replace('NG:', '') || '';
@@ -139,7 +149,7 @@ const filteredPatients = useMemo(() => {
       setFormData({ 
         ...app, 
         staffId: isTele ? app.staffId : '',
-        appointmentTime: app.appointmentTime ? new Date(app.appointmentTime).toISOString().slice(0, 16) : '',
+        appointmentTime: app.appointmentTime ? formatForInput(app.appointmentTime) : '',
         customService: customSvc,
         customSource: customSrc,
         note: actualNote,
@@ -219,10 +229,28 @@ const filteredPatients = useMemo(() => {
       else if (newStatus === 'DONE') {
         updatedData.type = AppointmentType.FOLLOW_UP;
       }
-      
+      else {
+        updatedData.type = AppointmentType.SCHEDULE_VISIT;
+      }
       return updatedData;
     });
   };
+
+  const STATUS_COLORS: Record<string, string> = {
+  WAITING: 'bg-white-50 border-white-200', // Chưa chốt - màu nền mặc định
+  SCHEDULED: 'bg-purple-50 border-purple-200', // Đã đặt lịch - tím
+  DEPOSITED: 'bg-yellow-50 border-yellow-200', // Đã đặt cọc - vàng
+  DONE: 'bg-green-50 border-green-200',        // Hoàn thành - xanh
+  CANCELLED: 'bg-red-50 border-red-200',       // Đã hủy - đỏ
+};
+
+const STATUS_TEXT_COLORS: Record<string, string> = {
+  WAITING: 'text-gray-700',
+  SCHEDULED: 'text-purple-700',
+  DEPOSITED: 'text-yellow-700',
+  DONE: 'text-green-700',
+  CANCELLED: 'text-red-700',
+};
 
   if (isLoading) return <div>Đang tải...</div>;
   if (!user) return null;
@@ -316,7 +344,8 @@ const filteredPatients = useMemo(() => {
     
 
     {/* 4. Nhóm cột chỉ hiện ở tab Procedure (Thực hiện) & Tái khám */}
-    {activeTab === AppointmentType.PROCEDURE || activeTab === AppointmentType.FOLLOW_UP && (
+    {(activeTab === AppointmentType.PROCEDURE || 
+    activeTab === AppointmentType.FOLLOW_UP) && (
       <>
         <th className="p-4">Sale Note</th>
         <th className="p-4">Doanh thu</th>
@@ -330,7 +359,7 @@ const filteredPatients = useMemo(() => {
 </thead>
           <tbody className="divide-y">
   {filteredAppointments.map((a: any) => (
-    <tr key={a.id} className="border-b hover:bg-gray-50">
+    <tr key={a.id} className={`${STATUS_COLORS[a.status as keyof typeof STATUS_COLORS] || 'bg-white'} border-b hover:opacity-90 transition`}>
       {/* 1. Nhóm cố định */}
       <td className="p-4">{new Date(a.appointmentTime).toLocaleString('vi-VN')}</td>
       <td className="p-4 font-bold">{a.patient?.name}</td>
@@ -348,10 +377,15 @@ const filteredPatients = useMemo(() => {
       {/* 3. Nhóm cố định */}
       <td className="p-4">{data.staffs.find((s: any) => s.id === a.staffId)?.name || '-'}</td>
       <td className="p-4">{data.doctors.find((d: any) => d.id === a.doctorId)?.name || '-'}</td>
-      <td className="p-4"><span className="px-2 py-1 rounded bg-gray-100">{StatusLabels[a.status as keyof typeof StatusLabels]}</span></td>
+      <td className="p-4 font-semibold">
+        <span className={`px-2 py-1 rounded-full text-xs border ${STATUS_TEXT_COLORS[a.status]}`}>
+          {StatusLabels[a.status as keyof typeof StatusLabels]}
+        </span>
+      </td>
 
       {/* 4. Nhóm cột Procedure (Chỉ hiện khi ở tab Thực hiện) */}
-      {activeTab === AppointmentType.PROCEDURE || activeTab === AppointmentType.FOLLOW_UP && (
+      {(activeTab === AppointmentType.PROCEDURE || 
+      activeTab === AppointmentType.FOLLOW_UP) && (
         <>
           <td className="p-4">{a.saleNote || '-'}</td>
           <td className="p-4">{a.revenue && a.revenue > 0 ? a.revenue.toLocaleString() + 'đ' : '-'}</td>

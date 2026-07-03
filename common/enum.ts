@@ -25,7 +25,7 @@ export enum AppointmentStatus {
   DEPOSITED = 'DEPOSITED',
   DONE = 'DONE',
   CANCELLED = 'CANCELLED',
-  FAILED = 'FAILED',
+  //FAILED = 'FAILED',
 }
 
 export enum AppointmentSource {
@@ -71,7 +71,7 @@ export const StatusLabels: Record<AppointmentStatus, string> = {
   [AppointmentStatus.DEPOSITED]: 'Đã đặt cọc',
   [AppointmentStatus.DONE]: 'Hoàn thành',
   [AppointmentStatus.CANCELLED]: 'Đã hủy',
-  [AppointmentStatus.FAILED]: 'Không đến',
+  // [AppointmentStatus.FAILED]: 'Không đến',
 };
 
 export const SourceLabels: Record<AppointmentSource, string> = {
