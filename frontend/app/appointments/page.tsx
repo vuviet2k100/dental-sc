@@ -127,7 +127,9 @@ const filteredPatients = useMemo(() => {
 
   const openModal = (app: any | null) => {
     const isAuthorized = !app || isAdmin || canEdit;
-  setIsReadOnly(!isAuthorized);
+    const isOtherService = !Object.keys(ServiceLabels).includes(app?.service || 'CLEANING');
+    const isOtherSource = !Object.keys(SourceLabels).includes(app?.source || 'WALKIN');
+    setIsReadOnly(!isAuthorized);
     if (app) {
       const formatForInput = (isoDate: string) => {
         const date = new Date(isoDate);
@@ -150,8 +152,10 @@ const filteredPatients = useMemo(() => {
         ...app, 
         staffId: isTele ? app.staffId : '',
         appointmentTime: app.appointmentTime ? formatForInput(app.appointmentTime) : '',
-        customService: customSvc,
-        customSource: customSrc,
+        service: isOtherService ? 'OTHER' : (app.service || 'CLEANING'),
+        customService: isOtherService ? app.service : '',
+        source: isOtherSource ? 'OTHER' : (app.source || 'WALKIN'),
+        customSource: isOtherSource ? app.source : '',
         note: actualNote,
         saleNote: app.saleNote || '', 
         revenue: app.revenue || 0,
@@ -368,9 +372,9 @@ const STATUS_TEXT_COLORS: Record<string, string> = {
       {/* 2. Nhóm cột ẩn theo Tab (Phải khớp với Header) */}
       {!isFollowUp && (
         <>
-          <td className="p-4">{SourceLabels[a.source as keyof typeof SourceLabels] || 'Khác'}</td>
+          <td className="p-4">{SourceLabels[a.source as keyof typeof SourceLabels]}</td>
           <td className="p-4">{a.note?.split('|')[0]}</td>
-          <td className="p-4">{ServiceLabels[a.service as keyof typeof ServiceLabels] || 'Khác'}</td>
+          <td className="p-4">{ServiceLabels[a.service as keyof typeof ServiceLabels]}</td>
         </>
       )}
 
@@ -517,19 +521,28 @@ const STATUS_TEXT_COLORS: Record<string, string> = {
                     </div>
                     <div className="space-y-1">
                       <label className={labelClass}>Dịch vụ</label>
-                      <select disabled={isReadOnly} className={inputClass} value={formData.service || ''} onChange={e => setFormData({...formData, service: e.target.value})}>
+                      <select disabled={isReadOnly} className={inputClass} value={formData.service || ''} 
+                      onChange={e => setFormData({...formData, service: e.target.value})}>
                           {Object.entries(ServiceLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                          <option value="OTHER">Khác</option>
+                          <option value="OTHER"></option>
                       </select>
+                      {formData.service === 'OTHER' && (
+                        <input disabled={isReadOnly} className={`${inputClass} mt-2 border-blue-500`} 
+                          placeholder="Nhập tên dịch vụ khác" value={formData.customService || ''} 
+                          onChange={e => setFormData({...formData, customService: e.target.value})} />
+                      )}
                     </div>
                     <div className="space-y-1">
                       <label className={labelClass}>Nguồn</label>
                       <select disabled={isReadOnly} className={inputClass} value={formData.source || ''} onChange={e => setFormData({...formData, source: e.target.value})}>
-                        <option value="ADS">ADS</option>
-                        <option value="SEEDING">Seeding</option>
-                        <option value="WALKIN">Vãng lai</option>
-                        <option value="OTHER">Khác</option>
+                        {Object.entries(SourceLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                        <option value="OTHER"></option>
                       </select>
+                      {formData.source === 'OTHER' && (
+                        <input disabled={isReadOnly} className={`${inputClass} mt-2 border-blue-500`} 
+                          placeholder="Nhập nguồn khác" value={formData.customSource || ''} 
+                          onChange={e => setFormData({...formData, customSource: e.target.value})} />
+                      )}
                     </div>
                   </div>
 

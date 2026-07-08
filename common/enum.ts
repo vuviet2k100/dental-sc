@@ -47,6 +47,7 @@ export enum ServiceType {
   WISDOM_TOOTH = 'WISDOM_TOOTH',
   CERAMIC = 'CERAMIC',
   CLEANING = 'CLEANING',
+  ORTHODONTICS = 'ORTHODONTICS',
   OTHER = 'OTHER',
 }
 
@@ -93,6 +94,7 @@ export const ServiceLabels: Record<ServiceType, string> = {
   [ServiceType.WISDOM_TOOTH]: 'Nhổ răng khôn',
   [ServiceType.CERAMIC]: 'Răng sứ',
   [ServiceType.CLEANING]: 'Lấy cao răng',
+  [ServiceType.ORTHODONTICS]: 'Chỉnh nha',
   [ServiceType.OTHER]: 'Dịch vụ khác',
 };
 

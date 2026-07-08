@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/services/api'; // 1. Import authService
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false); // 2. Thêm state loading
 
+  const { loginSuccess } = useAuth(); // lấy từ hook
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -18,10 +20,11 @@ export default function LoginPage() {
 
     try {
       // 3. Sử dụng authService thay cho api.post trực tiếp
-      const res = await authService.login({ email, password });
-      
+      const res = await authService.login({ email, password });  
       const { user, access_token } = res.data;
-
+      localStorage.setItem('access_token', access_token);
+      loginSuccess(user); // Cập nhật thông tin người dùng vào context
+      router.replace('/appointments'); // Điều hướng sau khi đăng nhập thành công
       if (!user?.role) {
         throw new Error("Không tìm thấy thông tin quyền truy cập.");
       }

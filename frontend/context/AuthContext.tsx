@@ -9,6 +9,7 @@ interface AuthContextType {
   setUser: (user: any | null) => void;
   isLoading: boolean;
   logout: () => void;
+  loginSuccess: (userData: any) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,7 +17,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  const loginSuccess = (userData: any) => {
+    setUser(userData);
+    setIsLoading(false); // Đánh dấu là đã load xong ngay khi có data
+  };
   const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user_role'); // Xóa luôn mấy cái đã set
@@ -38,7 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 department: res.data.department || res.data.deptName || 'Chưa cập nhật'
             };
             
-            setUser(res.data);
+            setUser(userData);
       } catch (error) {
         setUser(null);
       } finally {
@@ -50,7 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, isLoading, logout }}>
+    <AuthContext.Provider value={{ user, setUser, isLoading, logout, loginSuccess }}>
       {children}
     </AuthContext.Provider>
   );

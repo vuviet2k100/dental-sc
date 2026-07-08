@@ -53,6 +53,7 @@ enum ServiceType {
   WISDOM_TOOTH
   CERAMIC
   CLEANING
+  ORTHODONTICS
   OTHER
 }
 
