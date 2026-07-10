@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Trash2, Upload, FileText, Loader2, ArrowLeft, Trash, History } from 'lucide-react';
 import { medicalRecordService } from '@/services/api';
 import MedicalRecordForm from '@/components/MedicalRecordForm';
+import { ServiceLabels } from '@common/enum';
 
 export default function RecordDetail() {
   const { id } = useParams() as { id: string };
@@ -140,7 +141,8 @@ export default function RecordDetail() {
           </div>
           <div>
             <span className="text-slate-500 block">Dịch vụ:</span>
-            <span className="font-semibold">{record.appointment?.service || '---'}</span>
+            <span className="font-semibold">
+              {ServiceLabels[record.appointment?.service as keyof typeof ServiceLabels] || record.appointment?.service || '---'}              </span>
           </div>
           <div>
             <span className="text-slate-500 block">Doanh thu:</span>
