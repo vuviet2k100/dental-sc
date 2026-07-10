@@ -142,12 +142,13 @@ export default function RecordDetail() {
           <div>
             <span className="text-slate-500 block">Dịch vụ:</span>
             <span className="font-semibold">
-              {ServiceLabels[record.appointment?.service as keyof typeof ServiceLabels] || record.appointment?.service || '---'}              </span>
+              {ServiceLabels[record.appointment?.service as keyof typeof ServiceLabels] || record.appointment?.service || '---'}              
+            </span>
           </div>
           <div>
             <span className="text-slate-500 block">Doanh thu:</span>
             <span className="font-semibold text-blue-600">
-              {record.appointment?.revenue ? record.appointment.revenue.toLocaleString('vi-VN') + 'đ' : '0đ'}
+              {Number(record.appointment?.revenue || 0).toLocaleString('vi-VN')}đ
             </span>
           </div>
           <div className="col-span-2">

@@ -324,272 +324,275 @@ const STATUS_TEXT_COLORS: Record<string, string> = {
       </div>
 
       <div className="bg-white shadow rounded-xl border overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm table-auto border-collapse">
           <thead className="bg-gray-800 text-white uppercase text-xs">
-  <tr>
-    {/* 1. Nhóm cố định luôn hiện */}
-    <th className="p-4">Thời gian</th>
-    <th className="p-4">Khách</th>
-    <th className="p-4">SĐT</th>
+              <tr>
+                {/* 1. Nhóm cố định luôn hiện */}
+                <th className="p-4 text-center min-w-[5px]">Thời gian</th>
+                <th className="p-4 text-center min-w-[150px]">Khách hàng</th>
+                {/* 2. Nhóm cột hiện theo Tab (Không phải Tái khám) */}
+                {!isFollowUp && (
+                  <>
+                    <th className="p-4 text-center min-w-[8px]">Nguồn</th>
+                    <th className="p-4 text-center min-w-[200px]">Tình trạng</th>
+                    <th className="p-4 text-center min-w-[80px]">Dịch vụ</th>
+                  </>
+                )}
 
-    {/* 2. Nhóm cột hiện theo Tab (Không phải Tái khám) */}
-    {!isFollowUp && (
-      <>
-        <th className="p-4">Nguồn</th>
-        <th className="p-4">Tình trạng</th>
-        <th className="p-4">Dịch vụ</th>
-      </>
-    )}
-
-    {/* 3. Nhóm cột Bác sĩ & Trạng thái (luôn hiện) */}
-    <th className="p-4">Telesale</th>
-    <th className="p-4">Bác sĩ</th>
-    <th className="p-4">Trạng thái</th>
-    
-
-    {/* 4. Nhóm cột chỉ hiện ở tab Procedure (Thực hiện) & Tái khám */}
-    {(activeTab === AppointmentType.PROCEDURE || 
-    activeTab === AppointmentType.FOLLOW_UP) && (
-      <>
-        <th className="p-4">Sale Note</th>
-        <th className="p-4">Doanh thu</th>
-        <th className="p-4">Bệnh án</th>
-
-      </>
-    )}
-    {/* 5. Nhóm cố định cuối */}
-    <th className="p-4">Hành động</th>
-  </tr>
-</thead>
-          <tbody className="divide-y">
-  {filteredAppointments.map((a: any) => (
-    <tr key={a.id} className={`${STATUS_COLORS[a.status as keyof typeof STATUS_COLORS] || 'bg-white'} border-b hover:opacity-90 transition`}>
-      {/* 1. Nhóm cố định */}
-      <td className="p-4">{new Date(a.appointmentTime).toLocaleString('vi-VN')}</td>
-      <td className="p-4 font-bold">{a.patient?.name}</td>
-      <td className="p-4">{a.patient?.phone || '-'}</td>
-
-      {/* 2. Nhóm cột ẩn theo Tab (Phải khớp với Header) */}
-      {!isFollowUp && (
-        <>
-          <td className="p-4">{SourceLabels[a.source as keyof typeof SourceLabels]}</td>
-          <td className="p-4">{a.note?.split('|')[0]}</td>
-          <td className="p-4">{ServiceLabels[a.service as keyof typeof ServiceLabels]}</td>
-        </>
-      )}
-
-      {/* 3. Nhóm cố định */}
-      <td className="p-4">{data.staffs.find((s: any) => s.id === a.staffId)?.name || '-'}</td>
-      <td className="p-4">{data.doctors.find((d: any) => d.id === a.doctorId)?.name || '-'}</td>
-      <td className="p-4 font-semibold">
-        <span className={`px-2 py-1 rounded-full text-xs border ${STATUS_TEXT_COLORS[a.status]}`}>
-          {StatusLabels[a.status as keyof typeof StatusLabels]}
-        </span>
-      </td>
-
-      {/* 4. Nhóm cột Procedure (Chỉ hiện khi ở tab Thực hiện) */}
-      {(activeTab === AppointmentType.PROCEDURE || 
-      activeTab === AppointmentType.FOLLOW_UP) && (
-        <>
-          <td className="p-4">{a.saleNote || '-'}</td>
-          <td className="p-4">{a.revenue && a.revenue > 0 ? a.revenue.toLocaleString() + 'đ' : '-'}</td>
-          <td className="p-4">
-            {(() => {
-              // 1. Kiểm tra quyền
-              const isAuthorized = isAdmin || Number(user?.id) === Number(a.doctorId);
-              if (!isAuthorized) return <span className="text-gray-400 text-xs">-</span>;
-              
-              // 2. Logic điều hướng thông minh
-              return (
-                <button 
-                  onClick={() => {
-                    if (a.medicalRecord) {
-                      // NẾU ĐÃ CÓ: Đẩy sang trang chi tiết bệnh án (Xem/Sửa)
-                      // Giả sử đường dẫn xem chi tiết là /medical-record/view/:id
-                      router.push(`/medical-record/${a.medicalRecord.id}`);
-                    } else {
-                      // NẾU CHƯA CÓ: Đẩy sang trang tạo mới
-                      router.push(`/medical-record/create?appointmentId=${a.id}`);
-                    }
-                  }}
-                  className={`font-bold hover:underline ${a.medicalRecord ? "text-green-600" : "text-blue-600"}`}
-                >
-                  {a.medicalRecord ? "Xem bệnh án" : "Tạo/Gắn bệnh án"}
-                </button>
-              );
-            })()}
-          </td>
-        </>
-      )}
-      {/* 6. Nhóm cố định cuối */}
-      
-      {/* Cột Hành động - Phân quyền động */}
-        <td className="p-4 text-center">
-          <div className="flex justify-center gap-2">
-            {canEdit ? (
-              <>
-                {/* Nút Sửa */}
-                <button 
-                  onClick={() => openModal(a)} 
-                  className="text-blue-600 font-bold hover:underline"
-                >
-                  Sửa
-                </button>
+                {/* 3. Nhóm Nhân sự & Trạng thái (luôn hiện) */}
+                <th className="p-4 text-center min-w-[150px]">Telesale</th>
+                <th className="p-4 text-center min-w-[150px]">Bác sĩ</th>
+                <th className="p-4 text-center min-w-[120px]">Trạng thái</th>
                 
-                {/* Nút Xóa (Chỉ cho Sửa thì mới cho Xóa) */}
-                <button 
-                  onClick={() => handleDelete(a.id)} 
-                  className="text-red-600 font-bold hover:underline"
-                >
-                  Xóa
-                </button>
-              </>
-            ) : (
-              /* Nút Xem (Dành cho người không có quyền sửa) */
-              <button 
-                onClick={() => openModal(a)} 
-                className="text-gray-600 font-bold underline"
-              >
-                Xem
-              </button>
-            )}
-          </div>
-        </td>
-            </tr>
-          ))}
-        </tbody>
-     </table>
-      </div>
-      
-      {isOpenModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-          <div className="bg-white p-6 rounded-3xl w-[600px] shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold">
-              {editingId ? (isReadOnly ? 'Xem lịch hẹn' : 'Sửa lịch hẹn') : 'Đặt lịch mới'}
-            </h2>
 
-            {(() => {
-              // Chỉ ẩn Sale Note & Doanh thu ở tab Lịch hẹn
-              const isScheduleTab = activeTab === AppointmentType.SCHEDULE_VISIT; 
-              const inputClass = `w-full p-3 border rounded-xl transition ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`;
-              const labelClass = "text-sm font-semibold text-gray-700";
+                {/* 4. Nhóm cột chỉ hiện ở tab Procedure (Thực hiện) & Tái khám */}
+                {(activeTab === AppointmentType.PROCEDURE || 
+                activeTab === AppointmentType.FOLLOW_UP) && (
+                  <>
+                    <th className="p-4 text-center min-w-[200px]">Sale Note</th>
+                    <th className="p-4 text-center min-w-[100px]">Doanh thu</th>
+                    <th className="p-4 text-center min-w-[100px]">Bệnh án</th>
 
-              return (
-                <div className="space-y-4">
-                  {/* Hàng 1: Thời gian & Trạng thái */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className={labelClass}>Thời gian</label>
-                      <input disabled={isReadOnly} type="datetime-local" className={inputClass} value={formData.appointmentTime || ''} onChange={e => setFormData({...formData, appointmentTime: e.target.value})} />
-                    </div>
-                    <div className="space-y-1">
-                      <label className={labelClass}>Trạng thái</label>
-                      <select disabled={isReadOnly} className={inputClass} value={formData.status || ''} onChange={(e) => handleStatusChange(e.target.value)}>
-                        {Object.entries(StatusLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Hàng 2: Khách hàng & Bác sĩ */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1 relative">
-                      <label className={labelClass}>Khách hàng</label>
-                      <input disabled={isReadOnly} className={inputClass} placeholder="Tìm tên..." value={patientSearch} onChange={e => { if(!isReadOnly) { setPatientSearch(e.target.value); setShowPatientDropdown(true); }}} />
-                      {!isReadOnly && showPatientDropdown && (
-                        <div className="absolute z-50 bg-white border rounded-xl shadow-lg w-full max-h-40 overflow-y-auto mt-1">
-                          {filteredPatients.map((p:any) => <div key={p.id} className="p-2 cursor-pointer hover:bg-gray-100" onClick={() => { setFormData({...formData, patientId: p.id}); setPatientSearch(p.name); setShowPatientDropdown(false); }}>{p.name}</div>)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      <label className={labelClass}>Bác sĩ</label>
-                      <select disabled={isReadOnly} className={inputClass} value={formData.doctorId || ''} onChange={e => setFormData({...formData, doctorId: e.target.value})}>
-                        <option value="">-- Chọn bác sĩ --</option>
-                        {data.doctors.map((d:any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Hàng 3: Telesale, Dịch vụ, Nguồn */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-1">
-                      <label className={labelClass}>Telesale</label>
-                      <select disabled={isReadOnly} className={inputClass} value={formData.staffId || ''} onChange={e => setFormData({...formData, staffId: e.target.value ? Number(e.target.value) : null})}>
-                        <option value="">-- Chọn --</option>
-                        {data.staffs.filter((s:any) => s.department === Department.TELE_SALE).map((s:any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                      </select>
-                    </div>
-                    <div className="space-y-1">
-                      <label className={labelClass}>Dịch vụ</label>
-                      <select disabled={isReadOnly} className={inputClass} value={formData.service || ''} 
-                      onChange={e => setFormData({...formData, service: e.target.value})}>
-                          {Object.entries(ServiceLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                          <option value="OTHER"></option>
-                      </select>
-                      {formData.service === 'OTHER' && (
-                        <input disabled={isReadOnly} className={`${inputClass} mt-2 border-blue-500`} 
-                          placeholder="Nhập tên dịch vụ khác" value={formData.customService || ''} 
-                          onChange={e => setFormData({...formData, customService: e.target.value})} />
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      <label className={labelClass}>Nguồn</label>
-                      <select disabled={isReadOnly} className={inputClass} value={formData.source || ''} onChange={e => setFormData({...formData, source: e.target.value})}>
-                        {Object.entries(SourceLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                        <option value="OTHER"></option>
-                      </select>
-                      {formData.source === 'OTHER' && (
-                        <input disabled={isReadOnly} className={`${inputClass} mt-2 border-blue-500`} 
-                          placeholder="Nhập nguồn khác" value={formData.customSource || ''} 
-                          onChange={e => setFormData({...formData, customSource: e.target.value})} />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Hàng 4: Tình trạng (Note) */}
-                  <div className="space-y-1">
-                    <label className={labelClass}>Tình trạng</label>
-                    <textarea disabled={isReadOnly} className={inputClass} rows={2} value={formData.note || ''} onChange={e => setFormData({...formData, note: e.target.value})} />
-                  </div>
-
-                  {/* PHẦN NÂNG CAO: Chỉ hiện khi KHÔNG phải tab Lịch hẹn */}
-                  {!isScheduleTab && (
-                    <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-dashed">
-                      <div className="space-y-1 col-span-2">
-                        <label className={labelClass}>Sale Note (Nội bộ)</label>
-                        <textarea disabled={isReadOnly} className={inputClass} rows={2} value={formData.saleNote || ''} onChange={e => setFormData({...formData, saleNote: e.target.value})} />
-                      </div>
-                      <div className="space-y-1 col-span-2">
-                        <label className={labelClass}>Doanh thu dự kiến</label>
-                        <input disabled={isReadOnly} type="text" 
-                        className={inputClass} 
-                        value={formData.revenue ? Number(formData.revenue).toLocaleString('vi-VN') : ''} 
-                          onChange={e => {
-                            // 1. Lấy giá trị thô, loại bỏ sạch dấu chấm và chữ
-                            const rawValue = e.target.value.replace(/\D/g, '');
-                            // 2. Chuyển thành số thực sự (Number)
-                            const numericValue = rawValue ? parseInt(rawValue, 10) : 0;
-                            // 3. Cập nhật state
-                            setFormData({...formData, revenue: numericValue});
-                        }} />
-                      </div>
-                    </div>
-                  )}
+                  </>
+                )}
+                {/* 5. Nhóm cố định cuối */}
+                <th className="p-4 text-center min-w-[100px]">Hành động</th>
+              </tr>
+            </thead>
+          <tbody className="divide-y">
+          {filteredAppointments.map((a: any) => (
+            <tr key={a.id} className={`${STATUS_COLORS[a.status as keyof typeof STATUS_COLORS] || 'bg-white'} border-b hover:opacity-90 transition`}>
+              {/* 1. Nhóm cố định */}
+              <td className="p-4 whitespace-normal">{new Date(a.appointmentTime).toLocaleString('vi-VN')}</td>
+              <td className="p-4 whitespace-normal">
+                <div className="flex flex-col">
+                  <span className="text-center font-bold">{a.patient?.name || '-'}</span>
+                  <span className="text-gray-500 text-center">{a.patient?.phone || '-'}</span>
                 </div>
-              );
-            })()}
+              </td>
+              {/* 2. Nhóm cột ẩn theo Tab (Phải khớp với Header) */}
+              {!isFollowUp && (
+                <>
+                  <td className="p-4 text-center whitespace-normal">{SourceLabels[a.source as keyof typeof SourceLabels]}</td>
+                  <td className="p-4 whitespace-normal">{a.note?.split('|')[0]}</td>
+                  <td className="p-4 text-center whitespace-normal">{ServiceLabels[a.service as keyof typeof ServiceLabels]}</td>
+                </>
+              )}
 
-      <div className="flex gap-2 pt-4">
-        <button onClick={() => setIsOpenModal(false)} className="flex-1 py-3 bg-gray-200 rounded-xl font-bold">Hủy</button>
-        {!isReadOnly && (
-          <button onClick={handleSubmit} disabled={isSaving} className="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white">
-            {isSaving ? 'Đang lưu...' : 'Lưu thông tin'}
-          </button>
+              {/* 3. Nhóm cố định */}
+              <td className="p-4 text-center whitespace-normal">{data.staffs.find((s: any) => s.id === a.staffId)?.name || '-'}</td>
+              <td className="p-4 text-center whitespace-normal">{data.doctors.find((d: any) => d.id === a.doctorId)?.name || '-'}</td>
+              <td className="p-4 font-semibold">
+                <span className={`px-2 py-1 rounded-full text-xs border ${STATUS_TEXT_COLORS[a.status]}`}>
+                  {StatusLabels[a.status as keyof typeof StatusLabels]}
+                </span>
+              </td>
+
+              {/* 4. Nhóm cột Procedure (Chỉ hiện khi ở tab Thực hiện) */}
+              {(activeTab === AppointmentType.PROCEDURE || 
+              activeTab === AppointmentType.FOLLOW_UP) && (
+                <>
+                  <td className="p-4 whitespace-normal">{a.saleNote || '-'}</td>
+                  <td className="p-4 text-right taburlar-nums font-semibold text-blue-600">
+                    {Number(a.revenue || 0).toLocaleString('vi-VN')}            
+                  </td>
+                  <td className="p-4">
+                    {(() => {
+                      // 1. Kiểm tra quyền
+                      const isAuthorized = isAdmin || Number(user?.id) === Number(a.doctorId);
+                      if (!isAuthorized) return <span className="text-gray-400 text-xs">-</span>;
+                      
+                      // 2. Logic điều hướng thông minh
+                      return (
+                        <button 
+                          onClick={() => {
+                            if (a.medicalRecord) {
+                              // NẾU ĐÃ CÓ: Đẩy sang trang chi tiết bệnh án (Xem/Sửa)
+                              // Giả sử đường dẫn xem chi tiết là /medical-record/view/:id
+                              router.push(`/medical-record/${a.medicalRecord.id}`);
+                            } else {
+                              // NẾU CHƯA CÓ: Đẩy sang trang tạo mới
+                              router.push(`/medical-record/create?appointmentId=${a.id}`);
+                            }
+                          }}
+                          className={`font-bold hover:underline ${a.medicalRecord ? "text-green-600" : "text-blue-600"}`}
+                        >
+                          {a.medicalRecord ? "Xem bệnh án" : "Tạo/Gắn bệnh án"}
+                        </button>
+                      );
+                    })()}
+                  </td>
+                </>
+              )}
+              {/* 6. Nhóm cố định cuối */}
+              
+              {/* Cột Hành động - Phân quyền động */}
+                <td className="p-4 text-center">
+                  <div className="flex justify-center gap-2">
+                    {canEdit ? (
+                      <>
+                        {/* Nút Sửa */}
+                        <button 
+                          onClick={() => openModal(a)} 
+                          className="text-blue-600 font-bold hover:underline"
+                        >
+                          Sửa
+                        </button>
+                        
+                        {/* Nút Xóa (Chỉ cho Sửa thì mới cho Xóa) */}
+                        <button 
+                          onClick={() => handleDelete(a.id)} 
+                          className="text-red-600 font-bold hover:underline"
+                        >
+                          Xóa
+                        </button>
+                      </>
+                    ) : (
+                      /* Nút Xem (Dành cho người không có quyền sửa) */
+                      <button 
+                        onClick={() => openModal(a)} 
+                        className="text-gray-600 font-bold underline"
+                      >
+                        Xem
+                      </button>
+                    )}
+                  </div>
+                </td>
+                    </tr>
+                  ))}
+                </tbody>
+            </table>
+              </div>
+              
+              {isOpenModal && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+                  <div className="bg-white p-6 rounded-3xl w-[600px] shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                    <h2 className="text-xl font-bold">
+                      {editingId ? (isReadOnly ? 'Xem lịch hẹn' : 'Sửa lịch hẹn') : 'Đặt lịch mới'}
+                    </h2>
+
+                    {(() => {
+                      // Chỉ ẩn Sale Note & Doanh thu ở tab Lịch hẹn
+                      const isScheduleTab = activeTab === AppointmentType.SCHEDULE_VISIT; 
+                      const inputClass = `w-full p-3 border rounded-xl transition ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`;
+                      const labelClass = "text-sm font-semibold text-gray-700";
+
+                      return (
+                        <div className="space-y-4">
+                          {/* Hàng 1: Thời gian & Trạng thái */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className={labelClass}>Thời gian</label>
+                              <input disabled={isReadOnly} type="datetime-local" className={inputClass} value={formData.appointmentTime || ''} onChange={e => setFormData({...formData, appointmentTime: e.target.value})} />
+                            </div>
+                            <div className="space-y-1">
+                              <label className={labelClass}>Trạng thái</label>
+                              <select disabled={isReadOnly} className={inputClass} value={formData.status || ''} onChange={(e) => handleStatusChange(e.target.value)}>
+                                {Object.entries(StatusLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Hàng 2: Khách hàng & Bác sĩ */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1 relative">
+                              <label className={labelClass}>Khách hàng</label>
+                              <input disabled={isReadOnly} className={inputClass} placeholder="Tìm tên..." value={patientSearch} onChange={e => { if(!isReadOnly) { setPatientSearch(e.target.value); setShowPatientDropdown(true); }}} />
+                              {!isReadOnly && showPatientDropdown && (
+                                <div className="absolute z-50 bg-white border rounded-xl shadow-lg w-full max-h-40 overflow-y-auto mt-1">
+                                  {filteredPatients.map((p:any) => <div key={p.id} className="p-2 cursor-pointer hover:bg-gray-100" onClick={() => { setFormData({...formData, patientId: p.id}); setPatientSearch(p.name); setShowPatientDropdown(false); }}>{p.name}</div>)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <label className={labelClass}>Bác sĩ</label>
+                              <select disabled={isReadOnly} className={inputClass} value={formData.doctorId || ''} onChange={e => setFormData({...formData, doctorId: e.target.value})}>
+                                <option value="">-- Chọn bác sĩ --</option>
+                                {data.doctors.map((d:any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Hàng 3: Telesale, Dịch vụ, Nguồn */}
+                          <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-1">
+                              <label className={labelClass}>Telesale</label>
+                              <select disabled={isReadOnly} className={inputClass} value={formData.staffId || ''} onChange={e => setFormData({...formData, staffId: e.target.value ? Number(e.target.value) : null})}>
+                                <option value="">-- Chọn --</option>
+                                {data.staffs.filter((s:any) => s.department === Department.TELE_SALE).map((s:any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className={labelClass}>Dịch vụ</label>
+                              <select disabled={isReadOnly} className={inputClass} value={formData.service || ''} 
+                              onChange={e => setFormData({...formData, service: e.target.value})}>
+                                  {Object.entries(ServiceLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                                  <option value="OTHER"></option>
+                              </select>
+                              {formData.service === 'OTHER' && (
+                                <input disabled={isReadOnly} className={`${inputClass} mt-2 border-blue-500`} 
+                                  placeholder="Nhập tên dịch vụ khác" value={formData.customService || ''} 
+                                  onChange={e => setFormData({...formData, customService: e.target.value})} />
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <label className={labelClass}>Nguồn</label>
+                              <select disabled={isReadOnly} className={inputClass} value={formData.source || ''} onChange={e => setFormData({...formData, source: e.target.value})}>
+                                {Object.entries(SourceLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                                <option value="OTHER"></option>
+                              </select>
+                              {formData.source === 'OTHER' && (
+                                <input disabled={isReadOnly} className={`${inputClass} mt-2 border-blue-500`} 
+                                  placeholder="Nhập nguồn khác" value={formData.customSource || ''} 
+                                  onChange={e => setFormData({...formData, customSource: e.target.value})} />
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Hàng 4: Tình trạng (Note) */}
+                          <div className="space-y-1">
+                            <label className={labelClass}>Tình trạng</label>
+                            <textarea disabled={isReadOnly} className={inputClass} rows={2} value={formData.note || ''} onChange={e => setFormData({...formData, note: e.target.value})} />
+                          </div>
+
+                          {/* PHẦN NÂNG CAO: Chỉ hiện khi KHÔNG phải tab Lịch hẹn */}
+                          {!isScheduleTab && (
+                            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-dashed">
+                              <div className="space-y-1 col-span-2">
+                                <label className={labelClass}>Sale Note (Nội bộ)</label>
+                                <textarea disabled={isReadOnly} className={inputClass} rows={2} value={formData.saleNote || ''} onChange={e => setFormData({...formData, saleNote: e.target.value})} />
+                              </div>
+                              <div className="space-y-1 col-span-2">
+                                <label className={labelClass}>Doanh thu dự kiến</label>
+                                <input disabled={isReadOnly} type="text" 
+                                className={inputClass} 
+                                value={formData.revenue ? Number(formData.revenue).toLocaleString('vi-VN') : ''} 
+                                  onChange={e => {
+                                    // 1. Lấy giá trị thô, loại bỏ sạch dấu chấm và chữ
+                                    const rawValue = e.target.value.replace(/\D/g, '');
+                                    // 2. Chuyển thành số thực sự (Number)
+                                    const numericValue = rawValue ? parseInt(rawValue, 10) : 0;
+                                    // 3. Cập nhật state
+                                    setFormData({...formData, revenue: numericValue});
+                                }} />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+              <div className="flex gap-2 pt-4">
+                <button onClick={() => setIsOpenModal(false)} className="flex-1 py-3 bg-gray-200 rounded-xl font-bold">Hủy</button>
+                {!isReadOnly && (
+                  <button onClick={handleSubmit} disabled={isSaving} className="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white">
+                    {isSaving ? 'Đang lưu...' : 'Lưu thông tin'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         )}
-      </div>
-    </div>
-  </div>
-)}
     </div>
   );
 }
