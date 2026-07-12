@@ -373,14 +373,13 @@ const STATUS_TEXT_COLORS: Record<string, string> = {
               {/* 2. Nhóm cột ẩn theo Tab (Phải khớp với Header) */}
               {!isFollowUp && (
                 <>
-                  <td className="p-4 text-center whitespace-normal">{SourceLabels[a.source as keyof typeof SourceLabels]}</td>
                   <td className="p-4 whitespace-normal">{a.note?.split('|')[0]}</td>
                   <td className="p-4 text-center whitespace-normal">{ServiceLabels[a.service as keyof typeof ServiceLabels]}</td>
-                  <td className="p-4 text-center whitespace-normal">{SourceLabels[a.source as keyof typeof SourceLabels]}</td>
                 </>
               )}
 
               {/* 3. Nhóm cố định */}
+              <td className="p-4 text-center whitespace-normal">{SourceLabels[a.source as keyof typeof SourceLabels]}</td>
               <td className="p-4 text-center whitespace-normal">{data.staffs.find((s: any) => s.id === a.staffId)?.name || '-'}</td>
               <td className="p-4 text-center whitespace-normal">{data.doctors.find((d: any) => d.id === a.doctorId)?.name || '-'}</td>
               <td className="p-4 font-semibold">
