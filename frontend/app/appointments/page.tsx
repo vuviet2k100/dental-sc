@@ -330,10 +330,10 @@ const STATUS_TEXT_COLORS: Record<string, string> = {
                 {/* 1. Nhóm cố định luôn hiện */}
                 <th className="p-4 text-center min-w-[5px]">Thời gian</th>
                 <th className="p-4 text-center min-w-[150px]">Khách hàng</th>
+                <th className="p-4 text-center min-w-[8px]">Nguồn</th>
                 {/* 2. Nhóm cột hiện theo Tab (Không phải Tái khám) */}
                 {!isFollowUp && (
                   <>
-                    <th className="p-4 text-center min-w-[8px]">Nguồn</th>
                     <th className="p-4 text-center min-w-[200px]">Tình trạng</th>
                     <th className="p-4 text-center min-w-[80px]">Dịch vụ</th>
                   </>
