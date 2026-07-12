@@ -376,6 +376,7 @@ const STATUS_TEXT_COLORS: Record<string, string> = {
                   <td className="p-4 text-center whitespace-normal">{SourceLabels[a.source as keyof typeof SourceLabels]}</td>
                   <td className="p-4 whitespace-normal">{a.note?.split('|')[0]}</td>
                   <td className="p-4 text-center whitespace-normal">{ServiceLabels[a.service as keyof typeof ServiceLabels]}</td>
+                  <td className="p-4 text-center whitespace-normal">{SourceLabels[a.source as keyof typeof SourceLabels]}</td>
                 </>
               )}
 
