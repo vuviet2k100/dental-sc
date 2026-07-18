@@ -370,6 +370,8 @@ const STATUS_TEXT_COLORS: Record<string, string> = {
                   <span className="text-gray-500 text-center">{a.patient?.phone || '-'}</span>
                 </div>
               </td>
+              <td className="p-4 text-center whitespace-normal">{SourceLabels[a.source as keyof typeof SourceLabels]}</td>
+
               {/* 2. Nhóm cột ẩn theo Tab (Phải khớp với Header) */}
               {!isFollowUp && (
                 <>
@@ -379,7 +381,6 @@ const STATUS_TEXT_COLORS: Record<string, string> = {
               )}
 
               {/* 3. Nhóm cố định */}
-              <td className="p-4 text-center whitespace-normal">{SourceLabels[a.source as keyof typeof SourceLabels]}</td>
               <td className="p-4 text-center whitespace-normal">{data.staffs.find((s: any) => s.id === a.staffId)?.name || '-'}</td>
               <td className="p-4 text-center whitespace-normal">{data.doctors.find((d: any) => d.id === a.doctorId)?.name || '-'}</td>
               <td className="p-4 font-semibold">
@@ -396,7 +397,7 @@ const STATUS_TEXT_COLORS: Record<string, string> = {
                   <td className="p-4 text-right taburlar-nums font-semibold text-blue-600">
                     {Number(a.revenue || 0).toLocaleString('vi-VN')}            
                   </td>
-                  <td className="p-4">
+                  <td className="p-4 text-center">
                     {(() => {
                       // 1. Kiểm tra quyền
                       const isAuthorized = isAdmin || Number(user?.id) === Number(a.doctorId);
@@ -424,9 +425,8 @@ const STATUS_TEXT_COLORS: Record<string, string> = {
                   </td>
                 </>
               )}
-              {/* 6. Nhóm cố định cuối */}
-              
-              {/* Cột Hành động - Phân quyền động */}
+
+              {/* 5. Cột Hành động - Phân quyền động */}
                 <td className="p-4 text-center">
                   <div className="flex justify-center gap-2">
                     {canEdit ? (
