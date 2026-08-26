@@ -400,7 +400,8 @@ const STATUS_TEXT_COLORS: Record<string, string> = {
                   <td className="p-4 text-center">
                     {(() => {
                       // 1. Kiểm tra quyền
-                      const isAuthorized = isAdmin || Number(user?.id) === Number(a.doctorId);
+                      const isTeleSale = user?.department === Department.TELE_SALE;
+                      const isAuthorized = isAdmin || Number(user?.id) === Number(a.doctorId) || isTeleSale;
                       if (!isAuthorized) return <span className="text-gray-400 text-xs">-</span>;
                       
                       // 2. Logic điều hướng thông minh
@@ -412,13 +413,19 @@ const STATUS_TEXT_COLORS: Record<string, string> = {
                               // Giả sử đường dẫn xem chi tiết là /medical-record/view/:id
                               router.push(`/medical-record/${a.medicalRecord.id}`);
                             } else {
+                              // KHI CHƯA CÓ: Nếu Telesale bấm vào mà không có quyền tạo/sửa, 
+                              // ta có thể chặn hoặc ẩn đi để tránh báo lỗi.
+                              if (isTeleSale) {
+                                alert("Chưa có bệnh án hoặc bạn không có quyền tạo bệnh án!");
+                                return;
+                              }
                               // NẾU CHƯA CÓ: Đẩy sang trang tạo mới
                               router.push(`/medical-record/create?appointmentId=${a.id}`);
                             }
                           }}
                           className={`font-bold hover:underline ${a.medicalRecord ? "text-green-600" : "text-blue-600"}`}
                         >
-                          {a.medicalRecord ? "Xem bệnh án" : "Tạo/Gắn bệnh án"}
+                          {a.medicalRecord ? "Xem bệnh án" : (isTeleSale ? "-" : "Tạo/Gắn bệnh án")}
                         </button>
                       );
                     })()}
