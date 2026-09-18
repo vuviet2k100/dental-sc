@@ -504,10 +504,34 @@ const STATUS_TEXT_COLORS: Record<string, string> = {
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1 relative">
                               <label className={labelClass}>Khách hàng</label>
-                              <input disabled={isReadOnly} className={inputClass} placeholder="Tìm tên..." value={patientSearch} onChange={e => { if(!isReadOnly) { setPatientSearch(e.target.value); setShowPatientDropdown(true); }}} />
+                              <input 
+                              disabled={isReadOnly} 
+                              className={inputClass} 
+                              placeholder="Tìm tên hoặc SĐT..." 
+                              value={patientSearch} 
+                              onChange={e => { 
+                                if(!isReadOnly) { 
+                                  setPatientSearch(e.target.value); 
+                                  setShowPatientDropdown(true); 
+                                  }
+                                }} 
+                              />
                               {!isReadOnly && showPatientDropdown && (
                                 <div className="absolute z-50 bg-white border rounded-xl shadow-lg w-full max-h-40 overflow-y-auto mt-1">
-                                  {filteredPatients.map((p:any) => <div key={p.id} className="p-2 cursor-pointer hover:bg-gray-100" onClick={() => { setFormData({...formData, patientId: p.id}); setPatientSearch(p.name); setShowPatientDropdown(false); }}>{p.name}</div>)}
+                                  {filteredPatients.map((p:any) => (
+                                    <div 
+                                    key={p.id} 
+                                    className="p-2 cursor-pointer hover:bg-gray-100 flex justify-between items-center" 
+                                    onClick={() => { 
+                                      setFormData({...formData, patientId: p.id}); 
+                                      setPatientSearch(`${p.name} (${p.phone || 'Chưa có SĐT'})`); 
+                                      setShowPatientDropdown(false); 
+                                      }}
+                                      >
+                                        <span className="font-medium">{p.name}</span>
+                                        <span className="text-gray-500 text-sm">{p.phone}</span>
+                                    </div>
+                                  ))}
                                 </div>
                               )}
                             </div>
